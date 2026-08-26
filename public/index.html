@@ -348,12 +348,12 @@
     </div>
     <div class="combined-card">
       <div class="combined-left">
-        <div class="combined-label">Total Markup Generated</div>
+        <div class="combined-label">Your Total Earnings</div>
         <div class="combined-value" id="combined-value">—</div>
         <div class="combined-breakdown">
           <div class="breakdown-item">
-            <span class="breakdown-label">Your Earnings</span>
-            <span class="breakdown-value green" id="combined-your-share">—</span>
+            <span class="breakdown-label">Total Markup Generated</span>
+            <span class="breakdown-value green" id="combined-gross-markup">—</span>
           </div>
           <div class="breakdown-divider"></div>
           <div class="breakdown-item">
@@ -472,11 +472,10 @@
         (m.winRate ? statCard('Win Rate', m.winRate, 'All contracts', 'accent-green') : '');
 
       // ── Combined total ────────────────────────────────────────────
-      const c  = data.combined  || {};
       const m2 = data.thisMonth || {};
-      document.getElementById('combined-value').textContent      = c.amount     || m2.grossMarkup || '—';
-      document.getElementById('combined-your-share').textContent = m2.yourShare || '—';
-      document.getElementById('combined-trades').textContent     = m2.trades    || '—';
+      document.getElementById('combined-value').textContent        = m2.yourShare   || '—';
+      document.getElementById('combined-gross-markup').textContent = m2.grossMarkup || '—';
+      document.getElementById('combined-trades').textContent       = m2.trades      || '—';
 
       // ── Recent trades table ───────────────────────────────────────
       const trades = data.trades || [];
