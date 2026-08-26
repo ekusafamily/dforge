@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: commission-dashboard
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: starter          # $7/mo — always on (free tier sleeps after 15min)
+    envVars:
+      - key: DFORGE_EMAIL
+        sync: false        # set manually in Render dashboard
+      - key: DFORGE_PASSWORD
+        sync: false        # set manually in Render dashboard
+      - key: NODE_ENV
+        value: production

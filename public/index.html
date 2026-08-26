@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Commission Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #08080f;
+      --surface:  #0f0f1a;
+      --card:     #13131f;
+      --card2:    #1a1a28;
+      --border:   rgba(255,255,255,0.07);
+      --accent:   #6366f1;
+      --accent2:  #8b5cf6;
+      --text:     #f1f5f9;
+      --muted:    #64748b;
+      --success:  #22c55e;
+      --danger:   #ef4444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(8,8,15,0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+    }
+    .header-inner {
+      max-width: 1100px; margin: 0 auto;
+      height: 60px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1rem; }
+    .logo-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 7px var(--success);
+      animation: pulse 2s infinite; display: none;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+    .live-label { font-size: 0.78rem; color: var(--muted); }
+    .btn-refresh {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.8rem;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      background: var(--card2); color: var(--text); font-family: inherit;
+      transition: all .2s;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); }
+    .btn-refresh:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Page wrapper ── */
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* ── Loading ── */
+    #loading {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 1.2rem; padding: 7rem 2rem;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { color: var(--muted); font-size: .9rem; }
+    .loading-steps { display: flex; flex-direction: column; gap: .45rem; max-width: 300px; width: 100%; }
+    .step { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--muted); opacity: .35; transition: opacity .3s; }
+    .step.active { opacity: 1; color: var(--text); }
+    .step.done   { opacity: .7; color: var(--success); }
+    .step-dot    { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── Error ── */
+    #error { display: none; text-align: center; padding: 5rem 2rem; }
+    .err-icon  { font-size: 2.5rem; margin-bottom: .75rem; }
+    .err-title { font-size: 1.1rem; font-weight: 700; color: var(--danger); margin-bottom: .4rem; }
+    .err-msg   { color: var(--muted); font-size: .88rem; margin-bottom: 1.2rem; }
+    .btn-retry {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .5rem 1.2rem; border-radius: 9px; font-size: .85rem;
+      font-weight: 600; cursor: pointer; border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-family: inherit; transition: opacity .2s;
+    }
+    .btn-retry:hover { opacity: .88; }
+
+    /* ── Content ── */
+    #content { display: none; animation: fadeUp .4s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    /* meta bar */
+    .meta-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: .5rem;
+      padding: .6rem 1rem; margin-bottom: 2rem;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; font-size: .78rem; color: var(--muted);
+    }
+    .meta-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .18rem .55rem; border-radius: 99px; font-weight: 700;
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .badge-cached { background: rgba(99,102,241,.12); color: #a5b4fc; }
+    .badge-fresh  { background: rgba(34,197,94,.1);   color: #4ade80; }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--muted); margin-bottom: 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ══════════════════════════════════
+       THIS MONTH STATS
+    ══════════════════════════════════ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      display: flex; flex-direction: column; gap: .4rem;
+      transition: border-color .2s, box-shadow .2s;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0; transition: opacity .2s;
+    }
+    .stat-card:hover { border-color: rgba(99,102,241,.3); box-shadow: 0 4px 20px rgba(99,102,241,.08); }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+    .stat-value {
+      font-size: 1.65rem; font-weight: 800; letter-spacing: -.04em;
+      background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,.55));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-sub { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+    .stat-card.accent-green .stat-value  { background: linear-gradient(135deg, #4ade80, #22c55e); -webkit-background-clip: text; background-clip: text; }
+    .stat-card.accent-purple .stat-value { background: linear-gradient(135deg, #c084fc, #a855f7); -webkit-background-clip: text; background-clip: text; }
+    .stat-card.accent-blue .stat-value   { background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; }
+
+    /* ══════════════════════════════════
+       COMBINED TOTAL
+    ══════════════════════════════════ */
+    .combined-card {
+      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(139,92,246,.08));
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .combined-left {}
+    .combined-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #a5b4fc; margin-bottom: .4rem; }
+    .combined-value {
+      font-size: 2.8rem; font-weight: 800; letter-spacing: -.05em;
+      background: linear-gradient(135deg, #fff 40%, rgba(255,255,255,.55));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: .9rem;
+    }
+    .combined-breakdown {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .breakdown-item { display: flex; flex-direction: column; gap: .15rem; }
+    .breakdown-label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+    .breakdown-value { font-size: 1.05rem; font-weight: 700; }
+    .breakdown-value.green  { color: #4ade80; }
+    .breakdown-value.purple { color: #c084fc; }
+    .breakdown-divider { width: 1px; background: rgba(255,255,255,.1); align-self: stretch; }
+    .combined-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: rgba(99,102,241,.2); border: 1px solid rgba(99,102,241,.3);
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
+      flex-shrink: 0;
+    }
+    @media(max-width:600px) {
+      .combined-card { grid-template-columns: 1fr; }
+      .combined-icon { display: none; }
+      .combined-value { font-size: 2rem; }
+    }
+
+    /* ══════════════════════════════════
+       RECENT TRADES TABLE
+    ══════════════════════════════════ */
+    .table-wrapper {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title { font-weight: 700; font-size: .95rem; }
+    .trade-count {
+      font-size: .75rem; color: var(--muted);
+      background: var(--card2); border: 1px solid var(--border);
+      padding: .2rem .65rem; border-radius: 99px;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    thead th {
+      text-align: left; padding: .65rem 1rem;
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap; background: rgba(255,255,255,.015);
+    }
+    tbody tr { transition: background .15s; }
+    tbody tr:hover { background: rgba(99,102,241,.04); }
+    tbody td {
+      padding: .7rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      color: var(--text); white-space: nowrap; vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* Result badges */
+    .badge-win  { display:inline-block; padding:.15rem .55rem; border-radius:99px; font-size:.7rem; font-weight:700; text-transform:uppercase; background:rgba(34,197,94,.12); color:#4ade80; border:1px solid rgba(34,197,94,.2); }
+    .badge-loss { display:inline-block; padding:.15rem .55rem; border-radius:99px; font-size:.7rem; font-weight:700; text-transform:uppercase; background:rgba(239,68,68,.12); color:#f87171; border:1px solid rgba(239,68,68,.2); }
+
+    .no-trades { text-align: center; padding: 3rem; color: var(--muted); font-size: .88rem; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 99px; }
+
+    @media(max-width: 600px) {
+      header { padding: 0 1rem; }
+      .page  { padding: 1rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .combined-value { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      My Dashboard
+    </div>
+    <div class="header-right">
+      <div class="live-dot" id="live-dot"></div>
+      <span class="live-label" id="live-label">Connecting...</span>
+      <button class="btn-refresh" id="btn-refresh" onclick="load(true)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-label">Fetching your earnings…</div>
+    <div class="loading-steps">
+      <div class="step active" id="s1"><div class="step-dot"></div> Launching secure browser</div>
+      <div class="step" id="s2"><div class="step-dot"></div> Authenticating…</div>
+      <div class="step" id="s3"><div class="step-dot"></div> Loading commission data</div>
+      <div class="step" id="s4"><div class="step-dot"></div> Extracting your earnings</div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error">
+    <div class="err-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="err-title">Failed to load data</div>
+    <div class="err-msg" id="err-msg">Something went wrong.</div>
+    <button class="btn-retry" onclick="load(true)">Try Again</button>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Meta bar -->
+    <div class="meta-bar">
+      <span style="display:flex;align-items:center;gap:.45rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Commission earnings — This Month
+      </span>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <span id="cache-badge"></span>
+        <span>Updated: <strong id="fetched-at">—</strong></span>
+      </div>
+    </div>
+
+    <!-- This Month -->
+    <div class="section-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      This Month — Earnings
+    </div>
+    <div class="stats-grid" id="stats-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Combined Total -->
+    <div class="section-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Total Earnings — This Month
+    </div>
+    <div class="combined-card">
+      <div class="combined-left">
+        <div class="combined-label">Total Markup Generated</div>
+        <div class="combined-value" id="combined-value">—</div>
+        <div class="combined-breakdown">
+          <div class="breakdown-item">
+            <span class="breakdown-label">Your Earnings</span>
+            <span class="breakdown-value green" id="combined-your-share">—</span>
+          </div>
+          <div class="breakdown-divider"></div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Total Trades</span>
+            <span class="breakdown-value" id="combined-trades">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="combined-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+    </div>
+
+    <!-- Recent Trades -->
+    <div class="section-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Recent Trades
+    </div>
+    <div class="table-wrapper">
+      <div class="table-header">
+        <span class="table-title">Recent Trades</span>
+        <span class="trade-count" id="trade-count">0 trades</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div>
+
+<script>
+  const API = '/api/commissions';
+  let stepTimer = null;
+
+  function animateSteps() {
+    const ids = ['s1','s2','s3','s4'];
+    let i = 0;
+    stepTimer = setInterval(() => {
+      if (i > 0) { document.getElementById(ids[i-1]).classList.replace('active','done'); }
+      if (i < ids.length) { document.getElementById(ids[i]).classList.add('active'); i++; }
+      else clearInterval(stepTimer);
+    }, 5000);
+  }
+
+  function resetSteps() {
+    clearInterval(stepTimer);
+    ['s1','s2','s3','s4'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('active','done');
+    });
+    document.getElementById('s1').classList.add('active');
+  }
+
+  function show(id) {
+    ['loading','error','content'].forEach(s =>
+      document.getElementById(s).style.display = s === id ? (s === 'loading' ? 'flex' : 'block') : 'none'
+    );
+  }
+
+  function statCard(label, value, sub, accentClass = '') {
+    return `<div class="stat-card ${accentClass}">
+      <div class="stat-label">${label}</div>
+      <div class="stat-value">${value}</div>
+      ${sub ? `<div class="stat-sub">${sub}</div>` : ''}
+    </div>`;
+  }
+
+  function renderResult(val) {
+    if (!val) return '—';
+    const v = val.toLowerCase();
+    if (v.includes('win'))  return `<span class="badge-win">Win</span>`;
+    if (v.includes('loss')) return `<span class="badge-loss">Loss</span>`;
+    return val;
+  }
+
+  // Track whether first load has completed
+  let firstLoadDone = false;
+
+  async function load(forceRefresh = false, silent = false) {
+    const btn = document.getElementById('btn-refresh');
+    btn.disabled = true;
+
+    // Silent = already showing content, don't interrupt with loading screen
+    if (!silent) {
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .75s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Loading…`;
+      document.getElementById('live-dot').style.display = 'none';
+      document.getElementById('live-label').textContent = 'Fetching…';
+      if (!firstLoadDone) { show('loading'); resetSteps(); animateSteps(); }
+    }
+
+    try {
+      const url = forceRefresh ? API + '?refresh=true' : API;
+      const res  = await fetch(url);
+      const data = await res.json();
+      clearInterval(stepTimer);
+      if (!data.success) throw new Error(data.error || 'Unknown error');
+
+      // ── Meta bar ──────────────────────────────────────────────────
+      document.getElementById('fetched-at').textContent =
+        new Date(data.fetchedAt).toLocaleTimeString();
+      document.getElementById('cache-badge').innerHTML = data.cached
+        ? `<span class="meta-badge badge-cached"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cached</span>`
+        : `<span class="meta-badge badge-fresh"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Fresh</span>`;
+
+      // ── This Month stats ──────────────────────────────────────────
+      const m = data.thisMonth || {};
+      document.getElementById('stats-grid').innerHTML =
+        statCard('Total Markup',   m.grossMarkup || '—', 'This month', '') +
+        statCard('Your Earnings',  m.yourShare   || '—', '',           'accent-green') +
+        statCard('Total Trades',   m.trades      || '—', 'This month', 'accent-blue') +
+        statCard('Active Traders', m.traders     || '—', 'Connected',  '') +
+        (m.winRate ? statCard('Win Rate', m.winRate, 'All contracts', 'accent-green') : '');
+
+      // ── Combined total ────────────────────────────────────────────
+      const c  = data.combined  || {};
+      const m2 = data.thisMonth || {};
+      document.getElementById('combined-value').textContent      = c.amount     || m2.grossMarkup || '—';
+      document.getElementById('combined-your-share').textContent = m2.yourShare || '—';
+      document.getElementById('combined-trades').textContent     = m2.trades    || '—';
+
+      // ── Recent trades table ───────────────────────────────────────
+      const trades = data.trades || [];
+      document.getElementById('trade-count').textContent = trades.length + ' trades';
+
+      if (trades.length === 0) {
+        document.getElementById('table-head').innerHTML = '';
+        document.getElementById('table-body').innerHTML =
+          '<tr><td colspan="10" class="no-trades">No recent trades found.</td></tr>';
+      } else {
+        const keys = Object.keys(trades[0]);
+        const niceKey = k => k.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase());
+        document.getElementById('table-head').innerHTML =
+          '<tr>' + keys.map(k => `<th>${niceKey(k)}</th>`).join('') + '</tr>';
+        document.getElementById('table-body').innerHTML = trades.map(row =>
+          '<tr>' + keys.map(k => {
+            const val = row[k] || '—';
+            return `<td>${k.toLowerCase().includes('result') ? renderResult(val) : val}</td>`;
+          }).join('') + '</tr>'
+        ).join('');
+      }
+
+      document.getElementById('live-dot').style.display = 'block';
+      document.getElementById('live-label').textContent = 'Live';
+      firstLoadDone = true;
+      show('content');
+
+    } catch (err) {
+      clearInterval(stepTimer);
+      if (!silent) {
+        document.getElementById('err-msg').textContent = err.message;
+        document.getElementById('live-label').textContent = 'Error';
+        if (!firstLoadDone) show('error');
+      }
+      console.error('Refresh error:', err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh`;
+    }
+  }
+
+  // Initial load
+  load();
+
+  // Auto-refresh every 5 min — silent if content already showing
+  setInterval(() => {
+    load(false, firstLoadDone);
+  }, 5 * 60 * 1000);
+</script>
+</body>
+</html>
