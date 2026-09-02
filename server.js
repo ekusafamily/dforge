@@ -45,10 +45,8 @@ async function scrapeDforgeCommissions() {
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",       // required on Render / Docker
+      "--disable-dev-shm-usage",
       "--disable-gpu",
-      "--single-process",
-      "--no-zygote",
     ],
   });
 
@@ -62,10 +60,9 @@ async function scrapeDforgeCommissions() {
     await page.waitForSelector('input[type="email"]', { timeout: 10000 });
     await page.type('input[type="email"]', DFORGE_EMAIL, { delay: 40 });
     await page.type('input[type="password"]', DFORGE_PASSWORD, { delay: 40 });
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }),
-      page.click('button[type="submit"]'),
-    ]);
+    
+    await page.click('button[type="submit"]');
+    await new Promise((r) => setTimeout(r, 4000));
     console.log("✅ Logged in →", page.url());
 
     // ── Navigate to commissions ──────────────────────────────────────────
