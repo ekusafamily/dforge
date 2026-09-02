@@ -12,12 +12,29 @@ const DFORGE_PASSWORD   = process.env.DFORGE_PASSWORD || "Ilove.mumu047";
 const DFORGE_LOGIN_URL  = "https://dforge.site/login";
 const DFORGE_TARGET_URL = "https://dforge.site/commissions";
 
+const DASHBOARD_USER = process.env.DASHBOARD_USER || "admin";
+const DASHBOARD_PASS = process.env.DASHBOARD_PASS || "balktraders";
+
 // Cache for 5 minutes
 let cache = { data: null, fetchedAt: null };
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 app.use(cors());
 app.use(express.json());
+
+// ─── Authentication Middleware ─────────────────────────────────────────────
+app.use((req, res, next) => {
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+
+  if (login && password && login === DASHBOARD_USER && password === DASHBOARD_PASS) {
+    return next();
+  }
+
+  res.set('WWW-Authenticate', 'Basic realm="401"');
+  res.status(401).send('Authentication required to view dashboard.');
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // ─── Scraper ───────────────────────────────────────────────────────────────
