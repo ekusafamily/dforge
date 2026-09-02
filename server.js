@@ -21,21 +21,35 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
 // ─── Authentication Middleware ─────────────────────────────────────────────
-app.use((req, res, next) => {
-  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
-  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  let credentials = '';
+  if (authHeader.startsWith('Bearer ')) {
+    credentials = authHeader.slice(7);
+  } else if (authHeader.startsWith('Basic ')) {
+    credentials = authHeader.slice(6);
+  }
+  const [login, password] = Buffer.from(credentials, 'base64').toString().split(':');
 
   if (login && password && login === DASHBOARD_USER && password === DASHBOARD_PASS) {
     return next();
   }
 
-  res.set('WWW-Authenticate', 'Basic realm="401"');
-  res.status(401).send('Authentication required to view dashboard.');
-});
+  return res.status(401).json({ success: false, error: "Authentication required" });
+}
 
-app.use(express.static(path.join(__dirname, "public")));
+// Login route
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body || {};
+  if (username === DASHBOARD_USER && password === DASHBOARD_PASS) {
+    const token = Buffer.from(`${username}:${password}`).toString("base64");
+    return res.json({ success: true, token });
+  }
+  return res.status(401).json({ success: false, error: "Invalid username or password" });
+});
 
 // ─── Scraper ───────────────────────────────────────────────────────────────
 async function scrapeDforgeCommissions() {
@@ -220,7 +234,7 @@ async function scrapeDforgeCommissions() {
 }
 
 // ─── API ────────────────────────────────────────────────────────────────────
-app.get("/api/commissions", async (req, res) => {
+app.get("/api/commissions", requireAuth, async (req, res) => {
   const now          = Date.now();
   const forceRefresh = req.query.refresh === "true";
 
