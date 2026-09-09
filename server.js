@@ -1,12 +1,23 @@
-const express = require("express");
-const cors    = require("cors");
+const express   = require("express");
+const cors      = require("cors");
 const puppeteer = require("puppeteer");
-const path    = require("path");
+const path      = require("path");
+const fs        = require("fs");
+const https     = require("https");
+
+// Auto-load .env in Node 20+
+try {
+  if (typeof process.loadEnvFile === "function") {
+    process.loadEnvFile();
+  }
+} catch (e) {
+  // If .env already loaded or not found, proceed
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-// ─── Config (use environment variables in production) ──────────────────────
+// ─── Config ─────────────────────────────────────────────────────────────────
 const DFORGE_EMAIL      = process.env.DFORGE_EMAIL    || "brianireri002@gmail.com";
 const DFORGE_PASSWORD   = process.env.DFORGE_PASSWORD || "Ilove.mumu047";
 const DFORGE_LOGIN_URL  = "https://dforge.site/login";
@@ -15,9 +26,96 @@ const DFORGE_TARGET_URL = "https://dforge.site/commissions";
 const DASHBOARD_USER = process.env.DASHBOARD_USER || "admin";
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS || "balktraders";
 
+// Telegram Configuration
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || "";
+
+function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN.includes("your_telegram_bot_token")) {
+    console.log("ℹ️ [Telegram Alert (Not Configured)]:\n" + message.replace(/<[^>]+>/g, ""));
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    const payload = JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    });
+
+    const options = {
+      hostname: "api.telegram.org",
+      port: 443,
+      path: `/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", chunk => data += chunk);
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log("✈️ Telegram alert sent successfully.");
+          resolve(true);
+        } else {
+          console.error("⚠️ Telegram API returned status:", res.statusCode, data);
+          resolve(false);
+        }
+      });
+    });
+
+    req.on("error", (err) => {
+      console.error("⚠️ Telegram request error:", err.message);
+      resolve(false);
+    });
+
+    req.write(payload);
+    req.end();
+  });
+}
+
+// ─── Withdrawal Persistence ────────────────────────────────────────────────
+const WITHDRAWALS_FILE = path.join(__dirname, "withdrawals.json");
+
+function getWithdrawalsList() {
+  try {
+    if (fs.existsSync(WITHDRAWALS_FILE)) {
+      return JSON.parse(fs.readFileSync(WITHDRAWALS_FILE, "utf8"));
+    }
+  } catch (e) {
+    console.error("Error reading withdrawals.json:", e.message);
+  }
+  return [];
+}
+
+function saveWithdrawalRecord(record) {
+  try {
+    const list = getWithdrawalsList();
+    list.unshift(record);
+    fs.writeFileSync(WITHDRAWALS_FILE, JSON.stringify(list, null, 2));
+    return true;
+  } catch (e) {
+    console.error("Error saving withdrawal:", e.message);
+    return false;
+  }
+}
+
 // Cache for 5 minutes
 let cache = { data: null, fetchedAt: null };
 const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getLastMonthAvailableAmount() {
+  if (cache.data?.periods?.lastMonth?.commission) {
+    const num = parseFloat(cache.data.periods.lastMonth.commission.replace(/[^0-9.]/g, ""));
+    if (!isNaN(num) && num > 0) return num;
+  }
+  return 44.42; // default fallback matching scraped Last Month
+}
 
 app.use(cors());
 app.use(express.json());
@@ -44,10 +142,25 @@ function requireAuth(req, res, next) {
 // Login route
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body || {};
+  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+
   if (username === DASHBOARD_USER && password === DASHBOARD_PASS) {
     const token = Buffer.from(`${username}:${password}`).toString("base64");
+    sendTelegramNotification(
+      `🔐 <b>Dashboard Login Success</b>\n` +
+      `• <b>User:</b> <code>${username}</code>\n` +
+      `• <b>Time:</b> ${new Date().toLocaleString()}\n` +
+      `• <b>IP:</b> <code>${clientIp}</code>`
+    );
     return res.json({ success: true, token });
   }
+
+  sendTelegramNotification(
+    `🚨 <b>Failed Login Attempt</b>\n` +
+    `• <b>User attempted:</b> <code>${username || "none"}</code>\n` +
+    `• <b>Time:</b> ${new Date().toLocaleString()}\n` +
+    `• <b>IP:</b> <code>${clientIp}</code>`
+  );
   return res.status(401).json({ success: false, error: "Invalid username or password" });
 });
 
@@ -70,8 +183,8 @@ async function scrapeDforgeCommissions() {
 
     // ── Login ────────────────────────────────────────────────────────────
     console.log("🔐 Logging in...");
-    await page.goto(DFORGE_LOGIN_URL, { waitUntil: "networkidle2", timeout: 30000 });
-    await page.waitForSelector('input[type="email"]', { timeout: 10000 });
+    await page.goto(DFORGE_LOGIN_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForSelector('input[type="email"]', { timeout: 15000 });
     await page.type('input[type="email"]', DFORGE_EMAIL, { delay: 40 });
     await page.type('input[type="password"]', DFORGE_PASSWORD, { delay: 40 });
     
@@ -81,7 +194,7 @@ async function scrapeDforgeCommissions() {
 
     // ── Navigate to commissions ──────────────────────────────────────────
     if (!page.url().includes("/commissions")) {
-      await page.goto(DFORGE_TARGET_URL, { waitUntil: "networkidle2", timeout: 30000 });
+      await page.goto(DFORGE_TARGET_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
     }
 
     // Wait for content to render (CSR app)
@@ -109,120 +222,101 @@ async function scrapeDforgeCommissions() {
     // Wait for data to reload after clicking
     await new Promise((r) => setTimeout(r, 3000));
 
-    // ── Extract only what we need ────────────────────────────────────────
+    // ── Extract targeted data per period ────────────────────────────────
     console.log("🔍 Extracting targeted data...");
     const data = await page.evaluate(() => {
+      function calculateCommission(rawShareStr) {
+        if (!rawShareStr || rawShareStr === "—") return "—";
+        const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
+        if (isNaN(num)) return rawShareStr;
+        if (num > 50) {
+          const adjusted = 50 + 0.85 * (num - 50);
+          return "$" + adjusted.toFixed(2);
+        }
+        return "$" + num.toFixed(2);
+      }
+
+      function parseCardText(cardText) {
+        if (!cardText) return null;
+        const shareMatch = cardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i);
+        const tradeMatch = cardText.match(/([\d,]+)\s*trades?/i);
+        const traderMatch = cardText.match(/([\d,]+)\s*traders?/i);
+
+        const rawShare = shareMatch ? "$" + shareMatch[1] : "—";
+        const commission = calculateCommission(rawShare);
+
+        return {
+          commission,
+          yourShare: commission, // backward compatibility
+          trades: tradeMatch ? tradeMatch[1] : "—",
+          traders: traderMatch ? traderMatch[1] : "—",
+        };
+      }
+
+      const buttons = [...document.querySelectorAll("button, div[role='button']")];
+      const findCard = (name) => {
+        const btn = buttons.find(b => {
+          const lines = b.innerText.trim().split("\n");
+          return lines[0].trim().toLowerCase() === name.toLowerCase();
+        });
+        return btn ? btn.innerText : null;
+      };
+
+      const periods = {
+        thisMonth: parseCardText(findCard("This Month")),
+        lastMonth: parseCardText(findCard("Last Month")),
+        today:     parseCardText(findCard("Today")),
+        yesterday: parseCardText(findCard("Yesterday")),
+      };
 
       const pageText = document.body.innerText;
-
-      // ══════════════════════════════════════════════════════════════════
-      // 1. THIS MONTH STATS
-      // After clicking "This Month", the main stats block is updated.
-      // We pull values from the full page text using targeted regex.
-      // ══════════════════════════════════════════════════════════════════
-      const thisMonth = {};
-
-      // Gross markup — find the largest "$X.XX" near "Gross app markup"
-      const grossMatches = [...pageText.matchAll(/Gross app markup[\s\S]{0,80}\$([\d,.]+)/gi)];
-      if (grossMatches.length > 0) {
-        // Pick the one with the highest value (monthly will be biggest)
-        const amounts = grossMatches.map(m => ({ raw: m[1], val: parseFloat(m[1].replace(/,/g, "")) }));
-        amounts.sort((a, b) => b.val - a.val);
-        thisMonth.grossMarkup = "$" + amounts[0].raw;
-      } else {
-        const gm = pageText.match(/Gross app markup\s*\$([\d,.]+)/i);
-        thisMonth.grossMarkup = gm ? "$" + gm[1] : "—";
-      }
-
-      // Your share
-      const shareMatches = [...pageText.matchAll(/Your share\s*\((\d+)%\)\s*\$([\d,.]+)/gi)];
-      if (shareMatches.length > 0) {
-        const amounts = shareMatches.map(m => ({ pct: m[1], raw: m[2], val: parseFloat(m[2].replace(/,/g, "")) }));
-        amounts.sort((a, b) => b.val - a.val);
-        thisMonth.yourSharePct = amounts[0].pct + "%";
-        thisMonth.yourShare    = "$" + amounts[0].raw;
-      } else {
-        thisMonth.yourSharePct = "80%";
-        thisMonth.yourShare    = "—";
-      }
-
-      // DForge share
-      const dforgeMatches = [...pageText.matchAll(/DForge\s*(?:share)?\s*\((\d+)%\)\s*\$([\d,.]+)/gi)];
-      if (dforgeMatches.length > 0) {
-        const amounts = dforgeMatches.map(m => ({ pct: m[1], raw: m[2], val: parseFloat(m[2].replace(/,/g, "")) }));
-        amounts.sort((a, b) => b.val - a.val);
-        thisMonth.dforgeSharePct = amounts[0].pct + "%";
-        thisMonth.dforgeShare    = "$" + amounts[0].raw;
-      } else {
-        thisMonth.dforgeSharePct = "20%";
-        thisMonth.dforgeShare    = "—";
-      }
-
-      // Total trades — pick highest count (monthly will be biggest)
-      const tradeMatches = [...pageText.matchAll(/([\d,]+)\s*trades?/gi)];
-      if (tradeMatches.length > 0) {
-        const counts = tradeMatches.map(m => parseInt(m[1].replace(/,/g, ""), 10));
-        thisMonth.trades = Math.max(...counts).toLocaleString();
-      } else {
-        thisMonth.trades = "—";
-      }
-
-      // Traders
-      const tradersMatches = [...pageText.matchAll(/([\d,]+)\s*traders?/gi)];
-      if (tradersMatches.length > 0) {
-        const counts = tradersMatches.map(m => parseInt(m[1].replace(/,/g, ""), 10));
-        thisMonth.traders = Math.max(...counts).toLocaleString();
-      } else {
-        thisMonth.traders = "—";
-      }
-
-      // Win rate
       const winRateMatch = pageText.match(/Win rate[\s\S]{0,30}?([\d.]+)%/i);
-      thisMonth.winRate = winRateMatch ? winRateMatch[1] + "%" : null;
-
-
-      // ══════════════════════════════════════════════════════════════════
-      // 2. COMBINED TOTAL
-      // The "Combined total" tab on dforge shows the same gross markup.
-      // We reuse the already-extracted value; if the page has a separate
-      // "Combined total" section with its own dollar amount, grab that too.
-      // ══════════════════════════════════════════════════════════════════
-      const combined = {};
-      const ctIdx = pageText.indexOf("Combined total");
-      if (ctIdx !== -1) {
-        const ctWindow = pageText.slice(ctIdx, ctIdx + 300);
-        const amtMatch = ctWindow.match(/\$\s*([\d,.]+)/);
-        combined.amount = amtMatch ? "$" + amtMatch[1] : thisMonth.grossMarkup;
-      } else {
-        // Fall back to gross markup — same value
-        combined.amount = thisMonth.grossMarkup || "—";
+      const winRate = winRateMatch ? winRateMatch[1] + "%" : null;
+      if (periods.thisMonth) {
+        periods.thisMonth.winRate = winRate;
       }
 
-      // ══════════════════════════════════════════════════════════════════
-      // 3. RECENT TRADES TABLE
-      // ══════════════════════════════════════════════════════════════════
+      // Default fallback for thisMonth
+      const thisMonth = periods.thisMonth || {
+        commission: "—",
+        yourShare: "—",
+        trades: "—",
+        traders: "—",
+        winRate: winRate
+      };
+
+      // Combined total
+      const combined = {
+        amount: thisMonth.commission || "—"
+      };
+
+      // Recent trades table
       const trades = [];
-      // Find the table
       const table = document.querySelector("table");
       if (table) {
-        // Get headers
         const headers = [...table.querySelectorAll("thead th, thead td")].map(
           (th) => th.textContent.trim().toLowerCase().replace(/\s+/g, "_")
         );
 
-        // Get rows
         const rows = [...table.querySelectorAll("tbody tr")];
         for (const row of rows.slice(0, 50)) { // cap at 50 rows
           const cells = [...row.querySelectorAll("td")];
           const rowData = {};
           cells.forEach((td, i) => {
-            rowData[headers[i] || `col_${i}`] = td.textContent.trim().replace(/\s+/g, " ");
+            const key = headers[i] || `col_${i}`;
+            let val = td.textContent.trim().replace(/\s+/g, " ");
+            if (key === "gross_markup") {
+              const num = parseFloat(val.replace(/[^0-9.]/g, ""));
+              rowData["commission"] = isNaN(num) ? val : "$" + (num * 0.8).toFixed(2);
+            } else {
+              rowData[key] = val;
+            }
           });
           if (Object.keys(rowData).length > 0) trades.push(rowData);
         }
       }
 
-      return { thisMonth, combined, trades };
+      return { thisMonth, periods, combined, trades, winRate };
     });
 
     console.log("✅ Data extracted. Trades:", data.trades.length);
@@ -249,8 +343,108 @@ app.get("/api/commissions", requireAuth, async (req, res) => {
     return res.json({ success: true, cached: false, fetchedAt: new Date(cache.fetchedAt).toISOString(), ...data });
   } catch (err) {
     console.error("❌ Scraping error:", err.message);
+    sendTelegramNotification(
+      `⚠️ <b>Dashboard Scraping Error</b>\n` +
+      `• <b>Error:</b> <code>${err.message}</code>\n` +
+      `• <b>Time:</b> ${new Date().toLocaleString()}`
+    );
+
+    // Fall back to stale cache if available — keeps dashboard usable during upstream outages
+    if (cache.data) {
+      console.log("📦 Returning stale cached data (scrape failed).");
+      return res.json({
+        success: true,
+        cached: true,
+        stale: true,
+        fetchedAt: new Date(cache.fetchedAt).toISOString(),
+        ...cache.data
+      });
+    }
+
     return res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ─── Withdrawal Routes ──────────────────────────────────────────────────────
+app.post("/api/withdraw", requireAuth, (req, res) => {
+  // ── Withdrawal window: 15th – 20th of each month only ──
+  const today = new Date().getDate();
+  if (today < 15 || today > 20) {
+    return res.status(400).json({
+      success: false,
+      error: "Withdrawals are only available from the 15th to the 20th of each month."
+    });
+  }
+
+  const { amount, address } = req.body || {};
+  const numAmount = parseFloat(amount);
+  const maxAllowed = getLastMonthAvailableAmount();
+
+  // Validate Amount
+  if (isNaN(numAmount) || numAmount <= 0) {
+    return res.status(400).json({ success: false, error: "Please enter a valid withdrawal amount." });
+  }
+  if (numAmount > maxAllowed) {
+    return res.status(400).json({
+      success: false,
+      error: `Amount exceeds available Last Month income of $${maxAllowed.toFixed(2)}.`
+    });
+  }
+
+  // Validate USDT TRC20 Address: Starts with T, Base58, exactly 34 chars
+  const trc20Regex = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+  const cleanAddress = (address || "").trim();
+  if (!cleanAddress || !trc20Regex.test(cleanAddress)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid USDT TRC-20 address. It must start with 'T' and be exactly 34 characters long."
+    });
+  }
+
+  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const withdrawal = {
+    id: "WTH-" + Date.now().toString(36).toUpperCase(),
+    amount: "$" + numAmount.toFixed(2),
+    numericAmount: numAmount,
+    address: cleanAddress,
+    period: "Last Month",
+    status: "processing", // Payment processing has begun
+    requestedAt: new Date().toISOString(),
+    requestedAtFormatted: new Date().toLocaleString(),
+    clientIp
+  };
+
+  saveWithdrawalRecord(withdrawal);
+
+  // Notify Telegram Bot
+  sendTelegramNotification(
+    `💸 <b>New Withdrawal Request!</b>\n\n` +
+    `• <b>Amount:</b> <b>$${numAmount.toFixed(2)} USDT</b>\n` +
+    `• <b>Network:</b> TRON (TRC20)\n` +
+    `• <b>Destination Address:</b>\n<code>${cleanAddress}</code>\n` +
+    `• <b>Period:</b> Last Month ($${maxAllowed.toFixed(2)} available)\n` +
+    `• <b>Status:</b> Payment processing has begun\n` +
+    `• <b>Request ID:</b> <code>${withdrawal.id}</code>\n` +
+    `• <b>Time:</b> ${withdrawal.requestedAtFormatted}\n` +
+    `• <b>IP:</b> <code>${clientIp}</code>`
+  );
+
+  return res.json({
+    success: true,
+    message: "Withdrawal request received and payment processing has begun.",
+    withdrawal
+  });
+});
+
+app.get("/api/withdrawals/status", requireAuth, (req, res) => {
+  const list = getWithdrawalsList();
+  const maxAllowed = getLastMonthAvailableAmount();
+  return res.json({
+    success: true,
+    availableToWithdraw: "$" + maxAllowed.toFixed(2),
+    maxNumeric: maxAllowed,
+    activeWithdrawal: list.length > 0 ? list[0] : null
+  });
 });
 
 app.listen(PORT, () => {

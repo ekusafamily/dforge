@@ -1,6 +1,6 @@
 {
   "name": "dforge-scraper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Scrapes the dforge.site commissions page and serves it via API",
   "main": "server.js",
   "scripts": {

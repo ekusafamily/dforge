@@ -1,26 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Commission Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     :root {
-      --bg:       #08080f;
-      --surface:  #0f0f1a;
-      --card:     #13131f;
-      --card2:    #1a1a28;
-      --border:   rgba(255,255,255,0.07);
-      --accent:   #6366f1;
-      --accent2:  #8b5cf6;
-      --text:     #f1f5f9;
-      --muted:    #64748b;
-      --success:  #22c55e;
-      --danger:   #ef4444;
+      --bg: #08080f;
+      --surface: #0f0f1a;
+      --card: #13131f;
+      --card2: #1a1a28;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #22c55e;
+      --danger: #ef4444;
     }
 
     body {
@@ -35,104 +45,358 @@
 
     /* ── Header ── */
     header {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(8,8,15,0.88);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(8, 8, 15, 0.88);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       padding: 0 2rem;
     }
+
     .header-inner {
-      max-width: 1100px; margin: 0 auto;
-      height: 60px; display: flex;
-      align-items: center; justify-content: space-between;
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .logo { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1rem; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
     .logo-icon {
-      width: 30px; height: 30px; border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex; align-items: center; justify-content: center; font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
     }
-    .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     .live-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--success); box-shadow: 0 0 7px var(--success);
-      animation: pulse 2s infinite; display: none;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 7px var(--success);
+      animation: pulse 2s infinite;
+      display: none;
     }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-    .live-label { font-size: 0.78rem; color: var(--muted); }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .5;
+        transform: scale(.8)
+      }
+    }
+
+    .live-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
     .btn-refresh {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.8rem;
-      font-weight: 600; cursor: pointer; border: 1px solid var(--border);
-      background: var(--card2); color: var(--text); font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      font-family: inherit;
       transition: all .2s;
     }
-    .btn-refresh:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); }
-    .btn-refresh:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-refresh:hover {
+      background: rgba(255, 255, 255, .07);
+      border-color: rgba(255, 255, 255, .14);
+    }
+
+    .btn-refresh:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
     /* ── Page wrapper ── */
-    .page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
 
     /* ── Loading ── */
     #loading {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 1.2rem; padding: 7rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      padding: 7rem 2rem;
     }
+
     .spinner {
-      width: 44px; height: 44px;
-      border: 3px solid var(--border); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin .75s linear infinite;
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-label { color: var(--muted); font-size: .9rem; }
-    .loading-steps { display: flex; flex-direction: column; gap: .45rem; max-width: 300px; width: 100%; }
-    .step { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--muted); opacity: .35; transition: opacity .3s; }
-    .step.active { opacity: 1; color: var(--text); }
-    .step.done   { opacity: .7; color: var(--success); }
-    .step-dot    { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-label {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .loading-steps {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      max-width: 300px;
+      width: 100%;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .8rem;
+      color: var(--muted);
+      opacity: .35;
+      transition: opacity .3s;
+    }
+
+    .step.active {
+      opacity: 1;
+      color: var(--text);
+    }
+
+    .step.done {
+      opacity: .7;
+      color: var(--success);
+    }
+
+    .step-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
 
     /* ── Error ── */
-    #error { display: none; text-align: center; padding: 5rem 2rem; }
-    .err-icon  { font-size: 2.5rem; margin-bottom: .75rem; }
-    .err-title { font-size: 1.1rem; font-weight: 700; color: var(--danger); margin-bottom: .4rem; }
-    .err-msg   { color: var(--muted); font-size: .88rem; margin-bottom: 1.2rem; }
-    .btn-retry {
-      display: inline-flex; align-items: center; gap: .4rem;
-      padding: .5rem 1.2rem; border-radius: 9px; font-size: .85rem;
-      font-weight: 600; cursor: pointer; border: none;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; font-family: inherit; transition: opacity .2s;
+    #error {
+      display: none;
+      text-align: center;
+      padding: 5rem 2rem;
     }
-    .btn-retry:hover { opacity: .88; }
+
+    .err-icon {
+      font-size: 2.5rem;
+      margin-bottom: .75rem;
+    }
+
+    .err-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--danger);
+      margin-bottom: .4rem;
+    }
+
+    .err-msg {
+      color: var(--muted);
+      font-size: .88rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem 1.2rem;
+      border-radius: 9px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: inherit;
+      transition: opacity .2s;
+    }
+
+    .btn-retry:hover {
+      opacity: .88;
+    }
 
     /* ── Content ── */
-    #content { display: none; animation: fadeUp .4s ease; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    #content {
+      display: none;
+      animation: fadeUp .4s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
 
     /* meta bar */
     .meta-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: .5rem;
-      padding: .6rem 1rem; margin-bottom: 2rem;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; font-size: .78rem; color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+      padding: .6rem 1rem;
+      margin-bottom: 2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: .78rem;
+      color: var(--muted);
     }
+
     .meta-badge {
-      display: inline-flex; align-items: center; gap: .3rem;
-      padding: .18rem .55rem; border-radius: 99px; font-weight: 700;
-      font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .18rem .55rem;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
     }
-    .badge-cached { background: rgba(99,102,241,.12); color: #a5b4fc; }
-    .badge-fresh  { background: rgba(34,197,94,.1);   color: #4ade80; }
+
+    .badge-cached {
+      background: rgba(99, 102, 241, .12);
+      color: #a5b4fc;
+    }
+
+    .badge-fresh {
+      background: rgba(34, 197, 94, .1);
+      color: #4ade80;
+    }
+
+    /* ── Period Selector ── */
+    .period-selector-container {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .period-selector {
+      display: inline-flex;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.35rem;
+      border-radius: 14px;
+      gap: 0.35rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .period-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.05rem;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+
+    .period-tab:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .period-tab.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(139, 92, 246, 0.22));
+      color: #fff;
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+    }
+
+    .period-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      transition: all 0.2s;
+    }
+
+    .period-tab.active .period-dot {
+      background: #4ade80;
+      box-shadow: 0 0 8px #4ade80;
+    }
 
     /* ── Section heading ── */
     .section-title {
-      font-size: .7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .1em; color: var(--muted); margin-bottom: 1rem;
-      display: flex; align-items: center; gap: .5rem;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
     }
+
     .section-title::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
 
     /* ══════════════════════════════════
@@ -144,40 +408,89 @@
       gap: 1rem;
       margin-bottom: 2.5rem;
     }
+
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 1.25rem 1.4rem;
-      display: flex; flex-direction: column; gap: .4rem;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
       transition: border-color .2s, box-shadow .2s;
-      position: relative; overflow: hidden;
+      position: relative;
+      overflow: hidden;
     }
+
     .stat-card::before {
       content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
-      opacity: 0; transition: opacity .2s;
+      opacity: 0;
+      transition: opacity .2s;
     }
-    .stat-card:hover { border-color: rgba(99,102,241,.3); box-shadow: 0 4px 20px rgba(99,102,241,.08); }
-    .stat-card:hover::before { opacity: 1; }
-    .stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+
+    .stat-card:hover {
+      border-color: rgba(99, 102, 241, .3);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, .08);
+    }
+
+    .stat-card:hover::before {
+      opacity: 1;
+    }
+
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+    }
+
     .stat-value {
-      font-size: 1.65rem; font-weight: 800; letter-spacing: -.04em;
-      background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,.55));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      background: linear-gradient(135deg, #fff 30%, rgba(255, 255, 255, .55));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .stat-sub { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
-    .stat-card.accent-green .stat-value  { background: linear-gradient(135deg, #4ade80, #22c55e); -webkit-background-clip: text; background-clip: text; }
-    .stat-card.accent-purple .stat-value { background: linear-gradient(135deg, #c084fc, #a855f7); -webkit-background-clip: text; background-clip: text; }
-    .stat-card.accent-blue .stat-value   { background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; }
+
+    .stat-sub {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+
+    .stat-card.accent-green .stat-value {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .stat-card.accent-purple .stat-value {
+      background: linear-gradient(135deg, #c084fc, #a855f7);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .stat-card.accent-blue .stat-value {
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
 
     /* ══════════════════════════════════
        COMBINED TOTAL
     ══════════════════════════════════ */
     .combined-card {
-      background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(139,92,246,.08));
-      border: 1px solid rgba(99,102,241,.25);
+      background: linear-gradient(135deg, rgba(99, 102, 241, .14), rgba(139, 92, 246, .08));
+      border: 1px solid rgba(99, 102, 241, .25);
       border-radius: 16px;
       padding: 1.75rem 2rem;
       margin-bottom: 2.5rem;
@@ -186,33 +499,406 @@
       gap: 1.5rem;
       align-items: center;
     }
+
     .combined-left {}
-    .combined-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #a5b4fc; margin-bottom: .4rem; }
+
+    .combined-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #a5b4fc;
+      margin-bottom: .4rem;
+    }
+
     .combined-value {
-      font-size: 2.8rem; font-weight: 800; letter-spacing: -.05em;
-      background: linear-gradient(135deg, #fff 40%, rgba(255,255,255,.55));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -.05em;
+      background: linear-gradient(135deg, #fff 40%, rgba(255, 255, 255, .55));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: .9rem;
     }
+
     .combined-breakdown {
-      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
     }
-    .breakdown-item { display: flex; flex-direction: column; gap: .15rem; }
-    .breakdown-label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-    .breakdown-value { font-size: 1.05rem; font-weight: 700; }
-    .breakdown-value.green  { color: #4ade80; }
-    .breakdown-value.purple { color: #c084fc; }
-    .breakdown-divider { width: 1px; background: rgba(255,255,255,.1); align-self: stretch; }
+
+    .breakdown-item {
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+    }
+
+    .breakdown-label {
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+    }
+
+    .breakdown-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .breakdown-value.green {
+      color: #4ade80;
+    }
+
+    .breakdown-value.purple {
+      color: #c084fc;
+    }
+
+    .breakdown-divider {
+      width: 1px;
+      background: rgba(255, 255, 255, .1);
+      align-self: stretch;
+    }
+
     .combined-icon {
-      width: 56px; height: 56px; border-radius: 14px;
-      background: rgba(99,102,241,.2); border: 1px solid rgba(99,102,241,.3);
-      display: flex; align-items: center; justify-content: center; font-size: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(99, 102, 241, .2);
+      border: 1px solid rgba(99, 102, 241, .3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
       flex-shrink: 0;
     }
+
     @media(max-width:600px) {
-      .combined-card { grid-template-columns: 1fr; }
-      .combined-icon { display: none; }
-      .combined-value { font-size: 2rem; }
+      .combined-card {
+        grid-template-columns: 1fr;
+      }
+
+      .combined-icon {
+        display: none;
+      }
+
+      .combined-value {
+        font-size: 2rem;
+      }
+    }
+
+    /* ══════════════════════════════════
+       WITHDRAWAL SECTION
+    ══════════════════════════════════ */
+    .withdraw-card {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.85), rgba(15, 15, 26, 0.9));
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+    }
+
+    .withdraw-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #10b981);
+    }
+
+    .withdraw-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .withdraw-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .withdraw-subtitle {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .withdraw-avail-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      padding: 0.45rem 1rem;
+      border-radius: 99px;
+    }
+
+    .withdraw-avail-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: #86efac;
+    }
+
+    .withdraw-avail-amount {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #4ade80;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media(max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+
+    .input-with-action,
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-prefix {
+      position: absolute;
+      left: 1rem;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    .input-with-action input {
+      padding-left: 2rem !important;
+      padding-right: 4.5rem !important;
+    }
+
+    .btn-max {
+      position: absolute;
+      right: 0.5rem;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.28rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-max:hover {
+      background: rgba(99, 102, 241, 0.35);
+      color: #fff;
+    }
+
+    .withdraw-card input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .withdraw-card input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .address-status {
+      position: absolute;
+      right: 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .address-status.valid {
+      color: #4ade80;
+    }
+
+    .address-status.invalid {
+      color: #f87171;
+    }
+
+    .input-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    .btn-withdraw {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1.6rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-withdraw:hover:not(:disabled) {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-withdraw:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .withdraw-error-msg {
+      margin-top: 1rem;
+      padding: 0.65rem 1rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 0.8rem;
+    }
+
+    /* ── Processing & Status Cards ── */
+    .withdraw-status-card {
+      padding: 1.5rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    .status-badge.waiting {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .status-badge.processing {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+      }
+    }
+
+    .withdraw-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .detail-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .detail-val {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .detail-val code {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #a5b4fc;
+      word-break: break-all;
     }
 
     /* ══════════════════════════════════
@@ -224,475 +910,1114 @@
       border-radius: 16px;
       overflow: hidden;
     }
+
     .table-header {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 1rem 1.4rem;
       border-bottom: 1px solid var(--border);
     }
-    .table-title { font-weight: 700; font-size: .95rem; }
+
+    .table-title {
+      font-weight: 700;
+      font-size: .95rem;
+    }
+
     .trade-count {
-      font-size: .75rem; color: var(--muted);
-      background: var(--card2); border: 1px solid var(--border);
-      padding: .2rem .65rem; border-radius: 99px;
+      font-size: .75rem;
+      color: var(--muted);
+      background: var(--card2);
+      border: 1px solid var(--border);
+      padding: .2rem .65rem;
+      border-radius: 99px;
     }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .83rem;
+    }
+
     thead th {
-      text-align: left; padding: .65rem 1rem;
-      font-size: .68rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted);
+      text-align: left;
+      padding: .65rem 1rem;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
       border-bottom: 1px solid var(--border);
-      white-space: nowrap; background: rgba(255,255,255,.015);
+      white-space: nowrap;
+      background: rgba(255, 255, 255, .015);
     }
-    tbody tr { transition: background .15s; }
-    tbody tr:hover { background: rgba(99,102,241,.04); }
+
+    tbody tr {
+      transition: background .15s;
+    }
+
+    tbody tr:hover {
+      background: rgba(99, 102, 241, .04);
+    }
+
     tbody td {
       padding: .7rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,.04);
-      color: var(--text); white-space: nowrap; vertical-align: middle;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      color: var(--text);
+      white-space: nowrap;
+      vertical-align: middle;
     }
-    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
 
     /* Result badges */
-    .badge-win  { display:inline-block; padding:.15rem .55rem; border-radius:99px; font-size:.7rem; font-weight:700; text-transform:uppercase; background:rgba(34,197,94,.12); color:#4ade80; border:1px solid rgba(34,197,94,.2); }
-    .badge-loss { display:inline-block; padding:.15rem .55rem; border-radius:99px; font-size:.7rem; font-weight:700; text-transform:uppercase; background:rgba(239,68,68,.12); color:#f87171; border:1px solid rgba(239,68,68,.2); }
+    .badge-win {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 99px;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(34, 197, 94, .12);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, .2);
+    }
 
-    .no-trades { text-align: center; padding: 3rem; color: var(--muted); font-size: .88rem; }
+    .badge-loss {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 99px;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(239, 68, 68, .12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, .2);
+    }
+
+    .no-trades {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: .88rem;
+    }
 
     /* scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 99px; }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, .1);
+      border-radius: 99px;
+    }
 
     @media(max-width: 600px) {
-      header { padding: 0 1rem; }
-      .page  { padding: 1rem; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .combined-value { font-size: 2rem; }
+      header {
+        padding: 0 1rem;
+      }
+
+      .page {
+        padding: 1rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .combined-value {
+        font-size: 2rem;
+      }
     }
 
     /* ── Login Overlay ── */
     #login-overlay {
-      position: fixed; inset: 0; z-index: 1000;
-      background: linear-gradient(135deg, rgba(8,8,15,0.85) 0%, rgba(15,15,26,0.92) 100%),
-                  url('/bg.png') center/cover no-repeat;
-      display: flex; align-items: center; justify-content: center;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: linear-gradient(135deg, rgba(8, 8, 15, 0.85) 0%, rgba(15, 15, 26, 0.92) 100%),
+        url('/bg.png') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 1.5rem;
       transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
     #login-overlay.hidden {
-      opacity: 0; transform: scale(1.05); pointer-events: none;
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
     }
+
     .login-card {
-      width: 100%; max-width: 400px;
+      width: 100%;
+      max-width: 400px;
       background: rgba(19, 19, 31, 0.7);
       backdrop-filter: blur(25px) saturate(180%);
       -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
       padding: 2.5rem 2rem;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 40px rgba(99,102,241,0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2);
       animation: loginFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    @keyframes loginFadeIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .login-header { text-align: center; margin-bottom: 2rem; }
-    .login-badge {
-      width: 48px; height: 48px; border-radius: 12px; margin: 0 auto 1rem;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex; align-items: center; justify-content: center; color: white;
-      box-shadow: 0 8px 20px rgba(99,102,241,0.4);
-    }
-    .login-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
-    .login-sub { font-size: 0.85rem; color: var(--muted); }
 
-    .input-group { margin-bottom: 1.25rem; }
-    .input-label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.4rem; }
+    @keyframes loginFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .login-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+    }
+
+    .login-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .input-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
     .input-field {
-      width: 100%; padding: 0.8rem 1rem;
+      width: 100%;
+      padding: 0.8rem 1rem;
       background: rgba(10, 10, 20, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px; font-family: inherit; font-size: 0.9rem;
-      color: var(--text); outline: none; transition: all 0.2s;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
     }
+
     .input-field:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
       background: rgba(15, 15, 28, 0.8);
     }
+
     .btn-login {
-      width: 100%; margin-top: 0.5rem; padding: 0.85rem;
-      border: none; border-radius: 10px;
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 10px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: white; font-family: inherit; font-size: 0.9rem; font-weight: 700;
-      cursor: pointer; transition: all 0.2s;
-      box-shadow: 0 4px 15px rgba(99,102,241,0.3);
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      color: white;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
-    .btn-login:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.45); }
-    .btn-login:active { transform: translateY(0); }
+
+    .btn-login:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
+
     .login-error {
-      margin-top: 1rem; padding: 0.6rem 0.8rem; border-radius: 8px;
-      background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #f87171; font-size: 0.8rem; text-align: center; display: none;
+      margin-top: 1rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      font-size: 0.8rem;
+      text-align: center;
+      display: none;
     }
+
     .btn-logout {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem;
-      font-weight: 600; cursor: pointer; border: 1px solid rgba(239,68,68,0.2);
-      background: rgba(239,68,68,0.08); color: #f87171; font-family: inherit;
-      transition: all .2s; margin-left: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.08);
+      color: #f87171;
+      font-family: inherit;
+      transition: all .2s;
+      margin-left: 0.5rem;
     }
-    .btn-logout:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div class="header-inner">
-    <div class="logo">
-      <div class="logo-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </div>
+        My Dashboard
       </div>
-      My Dashboard
+      <div class="header-right">
+        <div class="live-dot" id="live-dot"></div>
+        <span class="live-label" id="live-label">Connecting...</span>
+        <button class="btn-refresh" id="btn-refresh" onclick="load(true)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          Refresh
+        </button>
+        <button class="btn-logout" id="btn-logout" onclick="logout()" title="Sign Out">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Logout
+        </button>
+      </div>
     </div>
-    <div class="header-right">
-      <div class="live-dot" id="live-dot"></div>
-      <span class="live-label" id="live-label">Connecting...</span>
-      <button class="btn-refresh" id="btn-refresh" onclick="load(true)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        Refresh
-      </button>
-      <button class="btn-logout" id="btn-logout" onclick="logout()" title="Sign Out">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Logout
-      </button>
+  </header>
+
+  <!-- Styled Glassmorphic Login Overlay -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </div>
+        <h2 class="login-title">Commission Portal</h2>
+        <p class="login-sub">Enter credentials to access earnings dashboard</p>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label class="input-label" for="login-username">Username</label>
+          <input type="text" id="login-username" class="input-field" placeholder="Enter username" required
+            autocomplete="username" />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="input-field" placeholder="••••••••" required
+            autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-login" id="btn-login-submit">
+          <span>Sign In</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+        <div class="login-error" id="login-error"></div>
+      </form>
     </div>
   </div>
-</header>
 
-<!-- Styled Glassmorphic Login Overlay -->
-<div id="login-overlay">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="login-badge">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <h2 class="login-title">Commission Portal</h2>
-      <p class="login-sub">Enter credentials to access earnings dashboard</p>
-    </div>
-    <form id="login-form" onsubmit="handleLogin(event)">
-      <div class="input-group">
-        <label class="input-label" for="login-username">Username</label>
-        <input type="text" id="login-username" class="input-field" placeholder="Enter username" required autocomplete="username"/>
-      </div>
-      <div class="input-group">
-        <label class="input-label" for="login-password">Password</label>
-        <input type="password" id="login-password" class="input-field" placeholder="••••••••" required autocomplete="current-password"/>
-      </div>
-      <button type="submit" class="btn-login" id="btn-login-submit">
-        <span>Sign In</span>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </button>
-      <div class="login-error" id="login-error"></div>
-    </form>
-  </div>
-</div>
+  <div class="page">
 
-<div class="page">
-
-  <!-- Loading -->
-  <div id="loading">
-    <div class="spinner"></div>
-    <div class="loading-label">Fetching your earnings…</div>
-    <div class="loading-steps">
-      <div class="step active" id="s1"><div class="step-dot"></div> Launching secure browser</div>
-      <div class="step" id="s2"><div class="step-dot"></div> Authenticating…</div>
-      <div class="step" id="s3"><div class="step-dot"></div> Loading commission data</div>
-      <div class="step" id="s4"><div class="step-dot"></div> Extracting your earnings</div>
-    </div>
-  </div>
-
-  <!-- Error -->
-  <div id="error">
-    <div class="err-icon">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    </div>
-    <div class="err-title">Failed to load data</div>
-    <div class="err-msg" id="err-msg">Something went wrong.</div>
-    <button class="btn-retry" onclick="load(true)">Try Again</button>
-  </div>
-
-  <!-- Content -->
-  <div id="content">
-
-    <!-- Meta bar -->
-    <div class="meta-bar">
-      <span style="display:flex;align-items:center;gap:.45rem;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Commission earnings — This Month
-      </span>
-      <div style="display:flex;align-items:center;gap:.75rem;">
-        <span id="cache-badge"></span>
-        <span>Updated: <strong id="fetched-at">—</strong></span>
+    <!-- Loading -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <div class="loading-label">Fetching your earnings…</div>
+      <div class="loading-steps">
+        <div class="step active" id="s1">
+          <div class="step-dot"></div> Launching secure browser
+        </div>
+        <div class="step" id="s2">
+          <div class="step-dot"></div> Authenticating…
+        </div>
+        <div class="step" id="s3">
+          <div class="step-dot"></div> Loading commission data
+        </div>
+        <div class="step" id="s4">
+          <div class="step-dot"></div> Extracting your earnings
+        </div>
       </div>
     </div>
 
-    <!-- This Month -->
-    <div class="section-title">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      This Month — Earnings
-    </div>
-    <div class="stats-grid" id="stats-grid">
-      <!-- filled by JS -->
+    <!-- Error -->
+    <div id="error">
+      <div class="err-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </div>
+      <div class="err-title">Failed to load data</div>
+      <div class="err-msg" id="err-msg">Something went wrong.</div>
+      <button class="btn-retry" onclick="load(true)">Try Again</button>
     </div>
 
-    <!-- Combined Total -->
-    <div class="section-title">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      Total Earnings — This Month
-    </div>
-    <div class="combined-card">
-      <div class="combined-left">
-        <div class="combined-label">Your Total Earnings</div>
-        <div class="combined-value" id="combined-value">—</div>
-        <div class="combined-breakdown">
-          <div class="breakdown-item">
-            <span class="breakdown-label">Total Markup Generated</span>
-            <span class="breakdown-value green" id="combined-gross-markup">—</span>
+    <!-- Content -->
+    <div id="content">
+
+      <!-- Meta bar -->
+      <div class="meta-bar">
+        <span style="display:flex;align-items:center;gap:.45rem;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          <span id="meta-period-label">Commission earnings — This Month</span>
+        </span>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <span id="cache-badge"></span>
+          <span>Updated: <strong id="fetched-at">—</strong></span>
+        </div>
+      </div>
+
+      <!-- Period Selector -->
+      <div class="period-selector-container">
+        <div class="period-selector" role="tablist" aria-label="Select Period">
+          <button class="period-tab active" id="tab-thisMonth" onclick="selectPeriod('thisMonth')">
+            <span class="period-dot"></span> This Month
+          </button>
+          <button class="period-tab" id="tab-lastMonth" onclick="selectPeriod('lastMonth')">
+            <span class="period-dot"></span> Last Month
+          </button>
+          <button class="period-tab" id="tab-today" onclick="selectPeriod('today')">
+            <span class="period-dot"></span> Today
+          </button>
+          <button class="period-tab" id="tab-yesterday" onclick="selectPeriod('yesterday')">
+            <span class="period-dot"></span> Yesterday
+          </button>
+        </div>
+      </div>
+
+      <!-- Period Stats Section -->
+      <div class="section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        <span id="section-period-title">This Month — Earnings</span>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- Combined Total -->
+      <div class="section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <span id="combined-section-title">Total Commission — This Month</span>
+      </div>
+      <div class="combined-card">
+        <div class="combined-left">
+          <div class="combined-label" id="combined-card-label">Your Total Commission</div>
+          <div class="combined-value" id="combined-value">—</div>
+          <div class="combined-breakdown">
+            <div class="breakdown-item">
+              <span class="breakdown-label">Active Traders</span>
+              <span class="breakdown-value green" id="combined-traders">—</span>
+            </div>
+            <div class="breakdown-divider"></div>
+            <div class="breakdown-item">
+              <span class="breakdown-label">Total Trades</span>
+              <span class="breakdown-value" id="combined-trades">—</span>
+            </div>
+            <div class="breakdown-divider" id="combined-winrate-divider"></div>
+            <div class="breakdown-item" id="combined-winrate-item">
+              <span class="breakdown-label">Win Rate</span>
+              <span class="breakdown-value purple" id="combined-winrate">—</span>
+            </div>
           </div>
-          <div class="breakdown-divider"></div>
-          <div class="breakdown-item">
-            <span class="breakdown-label">Total Trades</span>
-            <span class="breakdown-value" id="combined-trades">—</span>
+        </div>
+        <div class="combined-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Withdrawal Section -->
+      <div class="section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+        </svg>
+        Withdraw Earnings
+      </div>
+      <div class="withdraw-card" id="withdraw-section">
+        <div class="withdraw-header">
+          <div>
+            <div class="withdraw-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20" />
+                <path d="m17 5-5-3-5 3" />
+                <path d="m17 19-5 3-5-3" />
+              </svg>
+              Last Month's Earnings Payout
+            </div>
+            <div class="withdraw-subtitle">Withdraw your eligible commissions via USDT (TRC-20 network)</div>
+          </div>
+          <div class="withdraw-avail-badge">
+            <span class="withdraw-avail-label">Available to Withdraw:</span>
+            <span class="withdraw-avail-amount" id="withdraw-available-amount">$44.42</span>
+          </div>
+        </div>
+
+        <!-- Closed Window Message (shown outside 15th-20th) -->
+        <div id="withdraw-closed-msg" style="display:none;">
+          <div class="withdraw-closed">
+            <div class="closed-icon">🔒</div>
+            <div>
+              <div class="closed-title">Withdrawal Window Closed</div>
+              <div>Withdrawals are only available from the <strong>15th</strong> to the <strong>20th</strong> of each month. Please come back during the withdrawal window to request your payout.</div>
+              <div class="closed-date">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span id="next-withdraw-window">Next window: 20th of this month</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Status Banner (shown when request is active or processing) -->
+        <div id="withdraw-status-container" style="display:none;"></div>
+
+        <!-- Withdrawal Form (hidden outside 15th-20th) -->
+        <form id="withdraw-form" onsubmit="handleWithdrawal(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="withdraw-amount">Withdrawal Amount ($ USD)</label>
+              <div class="input-with-action">
+                <span class="input-prefix">$</span>
+                <input type="number" id="withdraw-amount" step="0.01" min="1" placeholder="0.00" required
+                  oninput="handleAmountInput(this)" />
+                <button type="button" class="btn-max" onclick="setMaxWithdrawal()">Max</button>
+              </div>
+              <div class="input-hint" id="amount-hint">Max allowable: <strong id="amount-hint-val">$44.42</strong></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="withdraw-address">USDT TRC-20 Wallet Address</label>
+              <div class="input-wrapper">
+                <input type="text" id="withdraw-address" placeholder="T..." required
+                  oninput="handleAddressInput(this.value)" autocomplete="off" spellcheck="false" />
+                <span class="address-status" id="address-status"></span>
+              </div>
+              <div class="input-hint" id="address-hint">Must start with 'T' and be exactly 34 characters (TRON network)
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+            <button type="submit" class="btn-withdraw" id="btn-submit-withdraw">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <polyline points="19 12 12 19 5 12" />
+              </svg>
+              <span id="btn-withdraw-text">Request Withdrawal</span>
+            </button>
+            <span style="font-size:0.75rem;color:var(--muted);display:flex;align-items:center;gap:0.35rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              Instant payout notification sent to admin via Telegram
+            </span>
+          </div>
+          <div id="withdraw-error" class="withdraw-error-msg" style="display:none;"></div>
+        </form>
+      </div>
+
+      <!-- Recent Trades -->
+      <div class="section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        Recent Trades
+      </div>
+      <div class="table-wrapper">
+        <div class="table-header">
+          <span class="table-title">Recent Trades</span>
+          <span class="trade-count" id="trade-count">0 trades</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div>
+
+  <script>
+    const API = '/api/commissions';
+    let stepTimer = null;
+    let dashboardData = null;
+    let activePeriod = 'thisMonth';
+
+    const PERIOD_LABELS = {
+      thisMonth: 'This Month',
+      lastMonth: 'Last Month',
+      today: 'Today',
+      yesterday: 'Yesterday'
+    };
+
+    function selectPeriod(periodKey) {
+      activePeriod = periodKey;
+      document.querySelectorAll('.period-tab').forEach(el => {
+        el.classList.toggle('active', el.id === 'tab-' + periodKey);
+      });
+      renderPeriodStats();
+    }
+
+    function renderPeriodStats() {
+      if (!dashboardData) return;
+      const periods = dashboardData.periods || {};
+      const m = periods[activePeriod] || (activePeriod === 'thisMonth' ? dashboardData.thisMonth : {}) || {};
+      const label = PERIOD_LABELS[activePeriod] || 'This Month';
+
+      const metaLabel = document.getElementById('meta-period-label');
+      if (metaLabel) metaLabel.textContent = `Commission earnings — ${label}`;
+
+      const sectionTitle = document.getElementById('section-period-title');
+      if (sectionTitle) sectionTitle.textContent = `${label} — Overview`;
+
+      const combinedSectionTitle = document.getElementById('combined-section-title');
+      if (combinedSectionTitle) combinedSectionTitle.textContent = `Total Commission — ${label}`;
+
+      const combinedCardLabel = document.getElementById('combined-card-label');
+      if (combinedCardLabel) combinedCardLabel.textContent = `Your Total Commission (${label})`;
+
+      const comm = m.commission || m.yourShare || '—';
+
+      // Stats Grid
+      document.getElementById('stats-grid').innerHTML =
+        statCard('Total Commission', comm, label, 'accent-green') +
+        statCard('Total Trades', m.trades || '—', label, 'accent-blue') +
+        statCard('Active Traders', m.traders || '—', 'Connected', '') +
+        (m.winRate ? statCard('Win Rate', m.winRate, 'All contracts', 'accent-purple') : '');
+
+      // Combined Card
+      document.getElementById('combined-value').textContent = comm;
+      document.getElementById('combined-traders').textContent = m.traders || '—';
+      document.getElementById('combined-trades').textContent = m.trades || '—';
+      const wrItem = document.getElementById('combined-winrate-item');
+      const wrDivider = document.getElementById('combined-winrate-divider');
+      if (wrItem) {
+        wrItem.style.display = m.winRate ? 'flex' : 'none';
+        if (wrDivider) wrDivider.style.display = m.winRate ? 'block' : 'none';
+        document.getElementById('combined-winrate').textContent = m.winRate || '—';
+      }
+    }
+
+    /* ══════════════════════════════════
+       WITHDRAWAL LOGIC
+    ══════════════════════════════════ */
+    let availableWithdrawalMax = 44.42;
+    const TRC20_REGEX = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+
+    function applyWithdrawalWindowCheck() {
+      const now = new Date();
+      const day = now.getDate();
+      const isOpen = day >= 15 && day <= 20;
+
+      const form = document.getElementById('withdraw-form');
+      const closedMsg = document.getElementById('withdraw-closed-msg');
+      const windowLabel = document.getElementById('next-withdraw-window');
+
+      if (form) form.style.display = isOpen ? 'block' : 'none';
+      if (closedMsg) closedMsg.style.display = isOpen ? 'none' : 'block';
+
+      if (windowLabel && !isOpen) {
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        let nextMonth = now.getMonth();
+        let nextYear = now.getFullYear();
+        if (day > 20) {
+          nextMonth += 1;
+          if (nextMonth > 11) { nextMonth = 0; nextYear += 1; }
+        }
+        windowLabel.textContent = `Next window: ${months[nextMonth]} 15th – 20th, ${nextYear}`;
+      }
+    }
+
+    function updateAvailableWithdrawal(maxAmount) {
+      if (typeof maxAmount === 'number' && maxAmount > 0) {
+        availableWithdrawalMax = maxAmount;
+      }
+      const formatted = '$' + availableWithdrawalMax.toFixed(2);
+      const badge = document.getElementById('withdraw-available-amount');
+      if (badge) badge.textContent = formatted;
+      const hint = document.getElementById('amount-hint-val');
+      if (hint) hint.textContent = formatted;
+      const amtInput = document.getElementById('withdraw-amount');
+      if (amtInput) amtInput.max = availableWithdrawalMax;
+    }
+
+    function setMaxWithdrawal() {
+      const input = document.getElementById('withdraw-amount');
+      if (input) {
+        input.value = availableWithdrawalMax.toFixed(2);
+        handleAmountInput(input);
+      }
+    }
+
+    function handleAmountInput(input) {
+      const val = parseFloat(input.value);
+      const errEl = document.getElementById('withdraw-error');
+      if (val > availableWithdrawalMax) {
+        input.setCustomValidity(`Amount cannot exceed last month's available income of $${availableWithdrawalMax.toFixed(2)}`);
+        if (errEl) {
+          errEl.textContent = `Amount cannot exceed last month's available income of $${availableWithdrawalMax.toFixed(2)}`;
+          errEl.style.display = 'block';
+        }
+      } else {
+        input.setCustomValidity('');
+        if (errEl) errEl.style.display = 'none';
+      }
+    }
+
+    function handleAddressInput(addr) {
+      const clean = addr.trim();
+      const statusEl = document.getElementById('address-status');
+      const inputEl = document.getElementById('withdraw-address');
+      if (!statusEl || !inputEl) return;
+
+      if (!clean) {
+        statusEl.textContent = '';
+        statusEl.className = 'address-status';
+        inputEl.setCustomValidity('');
+        return;
+      }
+
+      if (TRC20_REGEX.test(clean)) {
+        statusEl.textContent = '✓ Valid TRC20';
+        statusEl.className = 'address-status valid';
+        inputEl.setCustomValidity('');
+      } else {
+        statusEl.textContent = clean.startsWith('T') ? `${clean.length}/34 chars` : 'Starts with T';
+        statusEl.className = 'address-status invalid';
+        inputEl.setCustomValidity("Invalid USDT TRC-20 address. It must start with 'T' and be exactly 34 characters.");
+      }
+    }
+
+    function renderWithdrawalStatus(statusType, details) {
+      const container = document.getElementById('withdraw-status-container');
+      if (!container) return;
+
+      const isWaiting = statusType === 'waiting';
+      container.style.display = 'block';
+      container.innerHTML = `
+      <div class="withdraw-status-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+          <div class="status-badge ${isWaiting ? 'waiting' : 'processing'}">
+            <span class="pulse-dot"></span>
+            <span>${isWaiting ? 'Waiting for approval…' : 'Payment processing has begun'}</span>
+          </div>
+          <span style="font-size:0.75rem;color:var(--muted);">${details.requestedAtFormatted || 'Just now'}</span>
+        </div>
+        <div style="font-size:0.83rem;color:${isWaiting ? '#fef3c7' : '#d1fae5'};line-height:1.4;">
+          ${isWaiting
+          ? 'Your withdrawal request has been submitted and dispatched to admin on Telegram. Awaiting approval…'
+          : 'Payment processing has begun. Your funds have been approved and queued for transfer on the TRON (TRC-20) network.'}
+        </div>
+        <div class="withdraw-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Amount</span>
+            <span class="detail-val" style="color:#4ade80;">${details.amount} USDT</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Network</span>
+            <span class="detail-val">TRON (TRC-20)</span>
+          </div>
+          <div class="detail-item" style="grid-column: span 2;">
+            <span class="detail-label">Destination Address</span>
+            <span class="detail-val"><code>${details.address}</code></span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-val"><code>${details.id || 'Pending'}</code></span>
           </div>
         </div>
       </div>
-      <div class="combined-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-    </div>
+    `;
+    }
 
-    <!-- Recent Trades -->
-    <div class="section-title">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Recent Trades
-    </div>
-    <div class="table-wrapper">
-      <div class="table-header">
-        <span class="table-title">Recent Trades</span>
-        <span class="trade-count" id="trade-count">0 trades</span>
-      </div>
-      <div class="table-scroll">
-        <table>
-          <thead id="table-head"></thead>
-          <tbody id="table-body"></tbody>
-        </table>
-      </div>
-    </div>
+    async function checkWithdrawalStatus() {
+      try {
+        const token = localStorage.getItem('dash_token');
+        if (!token) return;
+        const res = await fetch('/api/withdrawals/status', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            if (data.maxNumeric) {
+              updateAvailableWithdrawal(data.maxNumeric);
+            }
+            if (data.activeWithdrawal) {
+              renderWithdrawalStatus('processing', data.activeWithdrawal);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not check withdrawal status:', e.message);
+      }
+    }
 
-  </div><!-- /content -->
-</div>
+    async function handleWithdrawal(e) {
+      e.preventDefault();
+      const amtEl = document.getElementById('withdraw-amount');
+      const addrEl = document.getElementById('withdraw-address');
+      const btn = document.getElementById('btn-submit-withdraw');
+      const btnText = document.getElementById('btn-withdraw-text');
+      const errEl = document.getElementById('withdraw-error');
 
-<script>
-  const API = '/api/commissions';
-  let stepTimer = null;
+      const amount = parseFloat(amtEl.value);
+      const address = addrEl.value.trim();
 
-  function animateSteps() {
-    const ids = ['s1','s2','s3','s4'];
-    let i = 0;
-    stepTimer = setInterval(() => {
-      if (i > 0) { document.getElementById(ids[i-1]).classList.replace('active','done'); }
-      if (i < ids.length) { document.getElementById(ids[i]).classList.add('active'); i++; }
-      else clearInterval(stepTimer);
-    }, 5000);
-  }
+      if (amount > availableWithdrawalMax) {
+        errEl.textContent = `Amount cannot exceed last month's available income of $${availableWithdrawalMax.toFixed(2)}`;
+        errEl.style.display = 'block';
+        return;
+      }
 
-  function resetSteps() {
-    clearInterval(stepTimer);
-    ['s1','s2','s3','s4'].forEach(id => {
-      const el = document.getElementById(id);
-      el.classList.remove('active','done');
-    });
-    document.getElementById('s1').classList.add('active');
-  }
+      if (!TRC20_REGEX.test(address)) {
+        errEl.textContent = "Please enter a valid USDT TRC-20 address (must start with 'T' and be 34 characters).";
+        errEl.style.display = 'block';
+        return;
+      }
 
-  function show(id) {
-    ['loading','error','content'].forEach(s =>
-      document.getElementById(s).style.display = s === id ? (s === 'loading' ? 'flex' : 'block') : 'none'
-    );
-  }
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btnText.textContent = 'Submitting Request…';
 
-  function statCard(label, value, sub, accentClass = '') {
-    return `<div class="stat-card ${accentClass}">
+      try {
+        const token = localStorage.getItem('dash_token');
+        const res = await fetch('/api/withdraw', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ amount, address })
+        });
+
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Failed to submit withdrawal');
+
+        // 1. Immediately show "Waiting for approval…"
+        const details = data.withdrawal || {
+          amount: '$' + amount.toFixed(2),
+          address,
+          id: 'WTH-PENDING',
+          requestedAtFormatted: new Date().toLocaleString()
+        };
+        renderWithdrawalStatus('waiting', details);
+
+        // Clear form inputs
+        amtEl.value = '';
+        addrEl.value = '';
+        document.getElementById('address-status').textContent = '';
+
+        // 2. Transition after 3.5 seconds to "Payment processing has begun"
+        setTimeout(() => {
+          renderWithdrawalStatus('processing', details);
+        }, 3500);
+
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Request Withdrawal';
+      }
+    }
+
+    function animateSteps() {
+      const ids = ['s1', 's2', 's3', 's4'];
+      let i = 0;
+      stepTimer = setInterval(() => {
+        if (i > 0) { document.getElementById(ids[i - 1]).classList.replace('active', 'done'); }
+        if (i < ids.length) { document.getElementById(ids[i]).classList.add('active'); i++; }
+        else clearInterval(stepTimer);
+      }, 5000);
+    }
+
+    function resetSteps() {
+      clearInterval(stepTimer);
+      ['s1', 's2', 's3', 's4'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'done');
+      });
+      document.getElementById('s1').classList.add('active');
+    }
+
+    function show(id) {
+      ['loading', 'error', 'content'].forEach(s =>
+        document.getElementById(s).style.display = s === id ? (s === 'loading' ? 'flex' : 'block') : 'none'
+      );
+    }
+
+    function statCard(label, value, sub, accentClass = '') {
+      return `<div class="stat-card ${accentClass}">
       <div class="stat-label">${label}</div>
       <div class="stat-value">${value}</div>
       ${sub ? `<div class="stat-sub">${sub}</div>` : ''}
     </div>`;
-  }
-
-  function renderResult(val) {
-    if (!val) return '—';
-    const v = val.toLowerCase();
-    if (v.includes('win'))  return `<span class="badge-win">Win</span>`;
-    if (v.includes('loss')) return `<span class="badge-loss">Loss</span>`;
-    return val;
-  }
-
-  // Track whether first load has completed
-  let firstLoadDone = false;
-
-  function showLogin() {
-    const overlay = document.getElementById('login-overlay');
-    overlay.style.display = 'flex';
-    requestAnimationFrame(() => overlay.classList.remove('hidden'));
-  }
-
-  function hideLogin() {
-    const overlay = document.getElementById('login-overlay');
-    overlay.classList.add('hidden');
-    setTimeout(() => { overlay.style.display = 'none'; }, 500);
-  }
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    const userEl = document.getElementById('login-username');
-    const passEl = document.getElementById('login-password');
-    const btn = document.getElementById('btn-login-submit');
-    const errEl = document.getElementById('login-error');
-
-    btn.disabled = true;
-    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .75s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Authenticating…`;
-    errEl.style.display = 'none';
-
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: userEl.value.trim(), password: passEl.value })
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Login failed');
-
-      localStorage.setItem('dash_token', data.token);
-      hideLogin();
-      load(false);
-    } catch (err) {
-      errEl.textContent = err.message;
-      errEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `<span>Sign In</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem('dash_token');
-    showLogin();
-  }
-
-  async function load(forceRefresh = false, silent = false) {
-    const btn = document.getElementById('btn-refresh');
-    btn.disabled = true;
-
-    // Silent = already showing content, don't interrupt with loading screen
-    if (!silent) {
-      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .75s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Loading…`;
-      document.getElementById('live-dot').style.display = 'none';
-      document.getElementById('live-label').textContent = 'Fetching…';
-      if (!firstLoadDone) { show('loading'); resetSteps(); animateSteps(); }
     }
 
-    try {
-      const token = localStorage.getItem('dash_token');
-      if (!token) {
-        showLogin();
-        return;
+    function renderResult(val) {
+      if (!val) return '—';
+      const v = val.toLowerCase();
+      if (v.includes('win')) return `<span class="badge-win">Win</span>`;
+      if (v.includes('loss')) return `<span class="badge-loss">Loss</span>`;
+      return val;
+    }
+
+    // Track whether first load has completed
+    let firstLoadDone = false;
+
+    function showLogin() {
+      const overlay = document.getElementById('login-overlay');
+      overlay.style.display = 'flex';
+      requestAnimationFrame(() => overlay.classList.remove('hidden'));
+    }
+
+    function hideLogin() {
+      const overlay = document.getElementById('login-overlay');
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 500);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const userEl = document.getElementById('login-username');
+      const passEl = document.getElementById('login-password');
+      const btn = document.getElementById('btn-login-submit');
+      const errEl = document.getElementById('login-error');
+
+      btn.disabled = true;
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .75s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Authenticating…`;
+      errEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: userEl.value.trim(), password: passEl.value })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Login failed');
+
+        localStorage.setItem('dash_token', data.token);
+        hideLogin();
+        load(false);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Sign In</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
       }
+    }
 
-      const url = forceRefresh ? API + '?refresh=true' : API;
-      const res  = await fetch(url, {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (res.status === 401) {
-        showLogin();
-        throw new Error('Authentication required');
-      }
-      const data = await res.json();
-      clearInterval(stepTimer);
-      if (!data.success) throw new Error(data.error || 'Unknown error');
+    function logout() {
+      localStorage.removeItem('dash_token');
+      showLogin();
+    }
 
-      // ── Meta bar ──────────────────────────────────────────────────
-      document.getElementById('fetched-at').textContent =
-        new Date(data.fetchedAt).toLocaleTimeString();
-      document.getElementById('cache-badge').innerHTML = data.cached
-        ? `<span class="meta-badge badge-cached"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cached</span>`
-        : `<span class="meta-badge badge-fresh"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Fresh</span>`;
+    async function load(forceRefresh = false, silent = false) {
+      const btn = document.getElementById('btn-refresh');
+      btn.disabled = true;
 
-      // ── This Month stats ──────────────────────────────────────────
-      const m = data.thisMonth || {};
-      document.getElementById('stats-grid').innerHTML =
-        statCard('Total Markup',   m.grossMarkup || '—', 'This month', '') +
-        statCard('Your Earnings',  m.yourShare   || '—', '',           'accent-green') +
-        statCard('Total Trades',   m.trades      || '—', 'This month', 'accent-blue') +
-        statCard('Active Traders', m.traders     || '—', 'Connected',  '') +
-        (m.winRate ? statCard('Win Rate', m.winRate, 'All contracts', 'accent-green') : '');
-
-      // ── Combined total ────────────────────────────────────────────
-      const m2 = data.thisMonth || {};
-      document.getElementById('combined-value').textContent        = m2.yourShare   || '—';
-      document.getElementById('combined-gross-markup').textContent = m2.grossMarkup || '—';
-      document.getElementById('combined-trades').textContent       = m2.trades      || '—';
-
-      // ── Recent trades table ───────────────────────────────────────
-      const trades = data.trades || [];
-      document.getElementById('trade-count').textContent = trades.length + ' trades';
-
-      if (trades.length === 0) {
-        document.getElementById('table-head').innerHTML = '';
-        document.getElementById('table-body').innerHTML =
-          '<tr><td colspan="10" class="no-trades">No recent trades found.</td></tr>';
-      } else {
-        const keys = Object.keys(trades[0]);
-        const niceKey = k => k.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase());
-        document.getElementById('table-head').innerHTML =
-          '<tr>' + keys.map(k => `<th>${niceKey(k)}</th>`).join('') + '</tr>';
-        document.getElementById('table-body').innerHTML = trades.map(row =>
-          '<tr>' + keys.map(k => {
-            const val = row[k] || '—';
-            return `<td>${k.toLowerCase().includes('result') ? renderResult(val) : val}</td>`;
-          }).join('') + '</tr>'
-        ).join('');
-      }
-
-      document.getElementById('live-dot').style.display = 'block';
-      document.getElementById('live-label').textContent = 'Live';
-      firstLoadDone = true;
-      show('content');
-
-    } catch (err) {
-      clearInterval(stepTimer);
+      // Silent = already showing content, don't interrupt with loading screen
       if (!silent) {
-        document.getElementById('err-msg').textContent = err.message;
-        document.getElementById('live-label').textContent = 'Error';
-        if (!firstLoadDone) show('error');
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .75s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Loading…`;
+        document.getElementById('live-dot').style.display = 'none';
+        document.getElementById('live-label').textContent = 'Fetching…';
+        if (!firstLoadDone) { show('loading'); resetSteps(); animateSteps(); }
       }
-      console.error('Refresh error:', err.message);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh`;
+
+      try {
+        const token = localStorage.getItem('dash_token');
+        if (!token) {
+          showLogin();
+          return;
+        }
+
+        const url = forceRefresh ? API + '?refresh=true' : API;
+        const res = await fetch(url, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.status === 401) {
+          showLogin();
+          throw new Error('Authentication required');
+        }
+        const data = await res.json();
+        clearInterval(stepTimer);
+        if (!data.success) throw new Error(data.error || 'Unknown error');
+
+        // ── Meta bar ──────────────────────────────────────────────────
+        document.getElementById('fetched-at').textContent =
+          new Date(data.fetchedAt).toLocaleTimeString();
+        document.getElementById('cache-badge').innerHTML = data.cached
+          ? `<span class="meta-badge badge-cached"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cached</span>`
+          : `<span class="meta-badge badge-fresh"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Fresh</span>`;
+
+        // ── Store data & render selected period stats ──────────────────
+        dashboardData = data;
+        renderPeriodStats();
+
+        // ── Update withdrawal available balance & active status ─────────
+        if (data.periods?.lastMonth?.commission) {
+          const num = parseFloat(data.periods.lastMonth.commission.replace(/[^0-9.]/g, ''));
+          if (!isNaN(num) && num > 0) {
+            updateAvailableWithdrawal(num);
+          }
+        }
+        applyWithdrawalWindowCheck();
+        checkWithdrawalStatus();
+
+        // ── Recent trades table ───────────────────────────────────────
+        const trades = data.trades || [];
+        document.getElementById('trade-count').textContent = trades.length + ' trades';
+
+        if (trades.length === 0) {
+          document.getElementById('table-head').innerHTML = '';
+          document.getElementById('table-body').innerHTML =
+            '<tr><td colspan="10" class="no-trades">No recent trades found.</td></tr>';
+        } else {
+          const keys = Object.keys(trades[0]);
+          const niceKey = k => k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          document.getElementById('table-head').innerHTML =
+            '<tr>' + keys.map(k => `<th>${niceKey(k)}</th>`).join('') + '</tr>';
+          document.getElementById('table-body').innerHTML = trades.map(row =>
+            '<tr>' + keys.map(k => {
+              const val = row[k] || '—';
+              return `<td>${k.toLowerCase().includes('result') ? renderResult(val) : val}</td>`;
+            }).join('') + '</tr>'
+          ).join('');
+        }
+
+        document.getElementById('live-dot').style.display = 'block';
+        document.getElementById('live-label').textContent = 'Live';
+        firstLoadDone = true;
+        show('content');
+
+      } catch (err) {
+        clearInterval(stepTimer);
+        if (!silent) {
+          document.getElementById('err-msg').textContent = err.message;
+          document.getElementById('live-label').textContent = 'Error';
+          if (!firstLoadDone) show('error');
+        }
+        console.error('Refresh error:', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh`;
+      }
     }
-  }
 
-  // Initial load
-  load();
+    // Initial load
+    load();
 
-  // Auto-refresh every 5 min — silent if content already showing
-  setInterval(() => {
-    load(false, firstLoadDone);
-  }, 5 * 60 * 1000);
-</script>
+    // Auto-refresh every 5 min — silent if content already showing
+    setInterval(() => {
+      load(false, firstLoadDone);
+    }, 5 * 60 * 1000);
+  </script>
 </body>
+
 </html>
