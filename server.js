@@ -23,8 +23,13 @@ const DFORGE_PASSWORD   = process.env.DFORGE_PASSWORD || "Ilove.mumu047";
 const DFORGE_LOGIN_URL  = "https://dforge.site/login";
 const DFORGE_TARGET_URL = "https://dforge.site/commissions";
 
+// Customer credentials (strictly for customer dashboard)
 const DASHBOARD_USER = process.env.DASHBOARD_USER || "admin";
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS || "balktraders";
+
+// Admin credentials (hidden from customer, required for /admin)
+const ADMIN_USER = process.env.ADMIN_USER || "IRERI";
+const ADMIN_PASS = process.env.ADMIN_PASS || "6946";
 
 // Telegram Configuration
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
@@ -79,7 +84,7 @@ function sendTelegramNotification(message) {
   });
 }
 
-// ─── Withdrawal Persistence ────────────────────────────────────────────────
+// ─── Withdrawal Persistence & Helpers ─────────────────────────────────────────
 const WITHDRAWALS_FILE = path.join(__dirname, "withdrawals.json");
 
 function getWithdrawalsList() {
@@ -105,6 +110,33 @@ function saveWithdrawalRecord(record) {
   }
 }
 
+function updateWithdrawalRecord(id, updates) {
+  try {
+    const list = getWithdrawalsList();
+    const index = list.findIndex((item) => item.id === id);
+    if (index === -1) return null;
+
+    list[index] = { ...list[index], ...updates };
+    fs.writeFileSync(WITHDRAWALS_FILE, JSON.stringify(list, null, 2));
+    return list[index];
+  } catch (e) {
+    console.error("Error updating withdrawal:", e.message);
+    return null;
+  }
+}
+
+function deleteWithdrawalRecord(id) {
+  try {
+    const list = getWithdrawalsList();
+    const filtered = list.filter((item) => item.id !== id);
+    fs.writeFileSync(WITHDRAWALS_FILE, JSON.stringify(filtered, null, 2));
+    return true;
+  } catch (e) {
+    console.error("Error deleting withdrawal:", e.message);
+    return false;
+  }
+}
+
 // Cache for 5 minutes
 let cache = { data: null, fetchedAt: null };
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -117,12 +149,27 @@ function getLastMonthAvailableAmount() {
   return 44.42; // default fallback matching scraped Last Month
 }
 
+function getRemainingAvailableAmount() {
+  const maxAllowed = getLastMonthAvailableAmount();
+  const list = getWithdrawalsList();
+  // Deduct amounts for pending, processing, or completed withdrawals
+  const totalUsed = list
+    .filter(w => w.status === "completed" || w.status === "processing" || w.status === "pending")
+    .reduce((sum, w) => sum + (w.numericAmount || 0), 0);
+  return Math.max(0, maxAllowed - totalUsed);
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// ─── Authentication Middleware ─────────────────────────────────────────────
-function requireAuth(req, res, next) {
+// Route to serve Admin Panel
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+// ─── Authentication Helpers ────────────────────────────────────────────────
+function parseCredentials(req) {
   const authHeader = req.headers.authorization || '';
   let credentials = '';
   if (authHeader.startsWith('Bearer ')) {
@@ -130,29 +177,63 @@ function requireAuth(req, res, next) {
   } else if (authHeader.startsWith('Basic ')) {
     credentials = authHeader.slice(6);
   }
-  const [login, password] = Buffer.from(credentials, 'base64').toString().split(':');
+  if (!credentials) return [null, null];
+  const parts = Buffer.from(credentials, 'base64').toString().split(':');
+  return [parts[0] || null, parts[1] || null];
+}
 
-  if (login && password && login === DASHBOARD_USER && password === DASHBOARD_PASS) {
+// Customer or Admin can access customer endpoints
+function requireAuth(req, res, next) {
+  const [login, password] = parseCredentials(req);
+
+  const isCustomer = login === DASHBOARD_USER && password === DASHBOARD_PASS;
+  const isAdmin = login === ADMIN_USER && password === ADMIN_PASS;
+
+  if (isCustomer || isAdmin) {
+    req.user = { role: isAdmin ? "admin" : "customer", username: login };
     return next();
   }
 
   return res.status(401).json({ success: false, error: "Authentication required" });
 }
 
-// Login route
+// Strict Admin-only middleware (Customer accounts are rejected!)
+function requireAdminAuth(req, res, next) {
+  const [login, password] = parseCredentials(req);
+
+  if (login === ADMIN_USER && password === ADMIN_PASS) {
+    req.user = { role: "admin", username: login };
+    return next();
+  }
+
+  if (login === DASHBOARD_USER && password === DASHBOARD_PASS) {
+    return res.status(403).json({ success: false, error: "Access denied. Admin account required." });
+  }
+
+  return res.status(401).json({ success: false, error: "Admin authentication required" });
+}
+
+// Customer Login route
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body || {};
   const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
 
+  // Allow customer login
   if (username === DASHBOARD_USER && password === DASHBOARD_PASS) {
     const token = Buffer.from(`${username}:${password}`).toString("base64");
     sendTelegramNotification(
-      `🔐 <b>Dashboard Login Success</b>\n` +
+      `🔐 <b>Customer Login Success</b>\n` +
       `• <b>User:</b> <code>${username}</code>\n` +
       `• <b>Time:</b> ${new Date().toLocaleString()}\n` +
       `• <b>IP:</b> <code>${clientIp}</code>`
     );
-    return res.json({ success: true, token });
+    return res.json({ success: true, token, role: "customer" });
+  }
+
+  // Also accept admin if admin logs in via main portal
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = Buffer.from(`${username}:${password}`).toString("base64");
+    return res.json({ success: true, token, role: "admin" });
   }
 
   sendTelegramNotification(
@@ -162,6 +243,31 @@ app.post("/api/login", (req, res) => {
     `• <b>IP:</b> <code>${clientIp}</code>`
   );
   return res.status(401).json({ success: false, error: "Invalid username or password" });
+});
+
+// Dedicated Admin Login route (Only IRERI / 6946 allowed)
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body || {};
+  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = Buffer.from(`${username}:${password}`).toString("base64");
+    sendTelegramNotification(
+      `🛡️ <b>Admin Portal Login Success</b>\n` +
+      `• <b>Admin:</b> <code>${username}</code>\n` +
+      `• <b>Time:</b> ${new Date().toLocaleString()}\n` +
+      `• <b>IP:</b> <code>${clientIp}</code>`
+    );
+    return res.json({ success: true, token, role: "admin" });
+  }
+
+  sendTelegramNotification(
+    `🚨 <b>Failed Admin Login Attempt</b>\n` +
+    `• <b>Attempted user:</b> <code>${username || "none"}</code>\n` +
+    `• <b>Time:</b> ${new Date().toLocaleString()}\n` +
+    `• <b>IP:</b> <code>${clientIp}</code>`
+  );
+  return res.status(401).json({ success: false, error: "Invalid admin credentials" });
 });
 
 // ─── Scraper ───────────────────────────────────────────────────────────────
@@ -229,11 +335,17 @@ async function scrapeDforgeCommissions() {
         if (!rawShareStr || rawShareStr === "—") return "—";
         const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
         if (isNaN(num)) return rawShareStr;
-        if (num > 50) {
-          const adjusted = 50 + 0.85 * (num - 50);
-          return "$" + adjusted.toFixed(2);
+
+        let adjusted = num;
+        if (num >= 65) {
+          // Tiered: First $50 at 0% ($50), $50–$65 at 15% ($12.75), and 40% deduction on portion above $65
+          adjusted = 50 + (15 * 0.85) + 0.60 * (num - 65);
+        } else if (num > 50) {
+          // First $50 at 0%, portion above $50 at 15% deduction
+          adjusted = 50 + 0.85 * (num - 50);
         }
-        return "$" + num.toFixed(2);
+
+        return "$" + adjusted.toFixed(2);
       }
 
       function parseCardText(cardText) {
@@ -378,16 +490,16 @@ app.post("/api/withdraw", requireAuth, (req, res) => {
 
   const { amount, address } = req.body || {};
   const numAmount = parseFloat(amount);
-  const maxAllowed = getLastMonthAvailableAmount();
+  const remainingAllowed = getRemainingAvailableAmount();
 
   // Validate Amount
   if (isNaN(numAmount) || numAmount <= 0) {
     return res.status(400).json({ success: false, error: "Please enter a valid withdrawal amount." });
   }
-  if (numAmount > maxAllowed) {
+  if (numAmount > remainingAllowed) {
     return res.status(400).json({
       success: false,
-      error: `Amount exceeds available Last Month income of $${maxAllowed.toFixed(2)}.`
+      error: `Amount exceeds available Last Month income of $${remainingAllowed.toFixed(2)}.`
     });
   }
 
@@ -408,7 +520,7 @@ app.post("/api/withdraw", requireAuth, (req, res) => {
     numericAmount: numAmount,
     address: cleanAddress,
     period: "Last Month",
-    status: "processing", // Payment processing has begun
+    status: "pending", // Waiting for admin processing
     requestedAt: new Date().toISOString(),
     requestedAtFormatted: new Date().toLocaleString(),
     clientIp
@@ -422,8 +534,8 @@ app.post("/api/withdraw", requireAuth, (req, res) => {
     `• <b>Amount:</b> <b>$${numAmount.toFixed(2)} USDT</b>\n` +
     `• <b>Network:</b> TRON (TRC20)\n` +
     `• <b>Destination Address:</b>\n<code>${cleanAddress}</code>\n` +
-    `• <b>Period:</b> Last Month ($${maxAllowed.toFixed(2)} available)\n` +
-    `• <b>Status:</b> Payment processing has begun\n` +
+    `• <b>Period:</b> Last Month ($${remainingAllowed.toFixed(2)} available)\n` +
+    `• <b>Status:</b> Pending Admin Processing\n` +
     `• <b>Request ID:</b> <code>${withdrawal.id}</code>\n` +
     `• <b>Time:</b> ${withdrawal.requestedAtFormatted}\n` +
     `• <b>IP:</b> <code>${clientIp}</code>`
@@ -431,20 +543,119 @@ app.post("/api/withdraw", requireAuth, (req, res) => {
 
   return res.json({
     success: true,
-    message: "Withdrawal request received and payment processing has begun.",
+    message: "Withdrawal request received. Waiting for admin processing.",
     withdrawal
   });
 });
 
 app.get("/api/withdrawals/status", requireAuth, (req, res) => {
   const list = getWithdrawalsList();
-  const maxAllowed = getLastMonthAvailableAmount();
+  const originalMax = getLastMonthAvailableAmount();
+  const remaining = getRemainingAvailableAmount();
+  const activeWithdrawal = list.find(w => w.status === "pending" || w.status === "processing") || null;
+  const latestWithdrawal = list.length > 0 ? list[0] : null;
+
   return res.json({
     success: true,
-    availableToWithdraw: "$" + maxAllowed.toFixed(2),
-    maxNumeric: maxAllowed,
-    activeWithdrawal: list.length > 0 ? list[0] : null
+    availableToWithdraw: "$" + remaining.toFixed(2),
+    maxNumeric: remaining,
+    originalMax: "$" + originalMax.toFixed(2),
+    originalNumeric: originalMax,
+    activeWithdrawal,
+    latestWithdrawal,
+    history: list
   });
+});
+
+// ─── Admin Withdrawal Endpoints (Protected by requireAdminAuth) ───────────────
+app.get("/api/admin/withdrawals", requireAdminAuth, (req, res) => {
+  const list = getWithdrawalsList();
+  const originalMax = getLastMonthAvailableAmount();
+  const remaining = getRemainingAvailableAmount();
+
+  const stats = {
+    total: list.length,
+    pending: list.filter(w => w.status === "pending").length,
+    processing: list.filter(w => w.status === "processing").length,
+    completed: list.filter(w => w.status === "completed").length,
+    rejected: list.filter(w => w.status === "rejected").length,
+    totalCompletedAmount: list
+      .filter(w => w.status === "completed")
+      .reduce((sum, w) => sum + (w.numericAmount || 0), 0),
+    totalPendingAmount: list
+      .filter(w => w.status === "pending" || w.status === "processing")
+      .reduce((sum, w) => sum + (w.numericAmount || 0), 0),
+    originalMax,
+    remaining
+  };
+
+  return res.json({
+    success: true,
+    withdrawals: list,
+    stats
+  });
+});
+
+app.patch("/api/admin/withdrawals/:id", requireAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const { status, txHash, notes } = req.body || {};
+
+  const validStatuses = ["pending", "processing", "completed", "rejected"];
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, error: "Invalid status value" });
+  }
+
+  const updates = { status };
+  const now = new Date();
+
+  if (status === "completed") {
+    updates.completedAt = now.toISOString();
+    updates.completedAtFormatted = now.toLocaleString();
+    if (txHash) updates.txHash = txHash.trim();
+    if (notes) updates.notes = notes.trim();
+  } else if (status === "processing") {
+    updates.processingStartedAt = now.toISOString();
+    updates.processingStartedAtFormatted = now.toLocaleString();
+    if (notes) updates.notes = notes.trim();
+  } else if (status === "rejected") {
+    updates.rejectedAt = now.toISOString();
+    updates.rejectedAtFormatted = now.toLocaleString();
+    updates.rejectionReason = (notes || "Declined by admin").trim();
+    if (notes) updates.notes = notes.trim();
+  }
+
+  const updated = updateWithdrawalRecord(id, updates);
+  if (!updated) {
+    return res.status(404).json({ success: false, error: "Withdrawal not found" });
+  }
+
+  // Telegram Alert for Admin Actions
+  if (status === "completed") {
+    sendTelegramNotification(
+      `✅ <b>Withdrawal Completed & Paid!</b>\n\n` +
+      `• <b>Amount:</b> <b>${updated.amount} USDT</b>\n` +
+      `• <b>Recipient:</b> <code>${updated.address}</code>\n` +
+      `• <b>TxID (Tron):</b> <code>${updated.txHash || "None recorded"}</code>\n` +
+      `• <b>Request ID:</b> <code>${updated.id}</code>\n` +
+      `• <b>Completed At:</b> ${updated.completedAtFormatted}\n` +
+      (updated.notes ? `• <b>Notes:</b> ${updated.notes}` : "")
+    );
+  } else if (status === "rejected") {
+    sendTelegramNotification(
+      `❌ <b>Withdrawal Request Rejected</b>\n\n` +
+      `• <b>Amount:</b> <b>${updated.amount} USDT</b>\n` +
+      `• <b>Request ID:</b> <code>${updated.id}</code>\n` +
+      `• <b>Reason:</b> ${updated.rejectionReason || "Declined by admin"}`
+    );
+  }
+
+  return res.json({ success: true, withdrawal: updated });
+});
+
+app.delete("/api/admin/withdrawals/:id", requireAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const ok = deleteWithdrawalRecord(id);
+  return res.json({ success: ok });
 });
 
 app.listen(PORT, () => {

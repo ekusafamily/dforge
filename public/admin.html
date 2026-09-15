@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — Withdrawal Processing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/admin-favicon.svg" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #08080f;
+      --surface: #0f0f1a;
+      --card: #13131f;
+      --card2: #1a1a28;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent 70%),
+        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.06), transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(8, 8, 15, 0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .admin-badge {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .live-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0.35rem 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-hover);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
+    .btn-success:hover {
+      background: rgba(34, 197, 94, 0.28);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.28);
+      color: #fff;
+    }
+
+    .btn-info {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+    }
+    .btn-info:hover {
+      background: rgba(59, 130, 246, 0.28);
+      color: #fff;
+    }
+
+    /* ── Main Layout ── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── KPI Grid ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--kpi-accent, #6366f1);
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Table Container ── */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--surface);
+      padding: 0.25rem;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+    }
+
+    .filter-tab {
+      padding: 0.35rem 0.8rem;
+      border-radius: 7px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .filter-tab.active {
+      background: var(--card2);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .filter-tab:hover:not(.active) {
+      color: var(--text);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.85rem 1.25rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+      font-size: 0.86rem;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .code-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
+      color: #c7d2fe;
+    }
+
+    .address-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.7rem;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .status-badge.processing {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+    }
+
+    .status-badge.completed {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
+
+    .status-badge.rejected {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+
+    .actions-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      padding: 1.75rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      animation: modalFadeUp 0.2s ease-out;
+    }
+
+    @keyframes modalFadeUp {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.25rem;
+    }
+
+    .btn-close:hover { color: #fff; }
+
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.86rem;
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Login Overlay ── */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(8, 8, 15, 0.96);
+      backdrop-filter: blur(25px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .login-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      padding: 2.25rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+    }
+
+    .login-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 110;
+      background: #1e1e30;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      animation: toastIn 0.25s ease;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Admin Login Overlay -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:1.75rem;">
+        <div class="login-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Restricted Area</span>
+        </div>
+        <h2 style="font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;">Admin Portal</h2>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:0.35rem;">Enter administrator credentials to manage withdrawals</p>
+      </div>
+      <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="login-username">Admin Username</label>
+          <input type="text" id="login-username" class="form-input" placeholder="Admin username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Admin Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-login" style="width:100%;justify-content:center;padding:0.7rem;margin-top:0.5rem;">
+          Sign In to Admin Portal
+        </button>
+        <div id="login-error" style="display:none;color:#f87171;font-size:0.8rem;margin-top:0.85rem;text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="brand-title">
+          Commission Control <span class="admin-badge">Admin</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="live-status">
+          <span class="live-dot"></span>
+          <span id="refresh-status">Live Monitoring</span>
+        </div>
+        <button type="button" class="btn" onclick="fetchWithdrawals(true)" id="btn-refresh" title="Reload withdrawals">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+        <button type="button" class="btn btn-danger" onclick="adminLogout()" title="Log out of admin">
+          Log Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- KPI Overview -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--kpi-accent:#f59e0b;">
+        <div class="kpi-label">
+          <span>Pending Action</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-value" id="kpi-pending-amt">$0.00</div>
+        <div class="kpi-sub" id="kpi-pending-count">0 requests awaiting payout</div>
+      </div>
+
+      <div class="kpi-card" style="--kpi-accent:#3b82f6;">
+        <div class="kpi-label">
+          <span>In Processing</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="kpi-value" id="kpi-proc-amt">$0.00</div>
+        <div class="kpi-sub" id="kpi-proc-count">0 transfers in progress</div>
+      </div>
+
+      <div class="kpi-card" style="--kpi-accent:#22c55e;">
+        <div class="kpi-label">
+          <span>Total Completed</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="kpi-value" id="kpi-completed-amt" style="color:#4ade80;">$0.00</div>
+        <div class="kpi-sub" id="kpi-completed-count">0 payouts completed</div>
+      </div>
+
+      <div class="kpi-card" style="--kpi-accent:#8b5cf6;">
+        <div class="kpi-label">
+          <span>Remaining Available</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.2"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M2 9h20"/><path d="m10 3 2 6 2-6"/></svg>
+        </div>
+        <div class="kpi-value" id="kpi-remaining-amt">$0.00</div>
+        <div class="kpi-sub" id="kpi-max-amt">Total scraped: $0.00</div>
+      </div>
+    </div>
+
+    <!-- Main Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          Withdrawal Requests
+          <span class="code-pill" id="total-count-badge" style="font-size:0.72rem;">0 total</span>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+          <button class="filter-tab" onclick="setFilter('pending', this)">Pending</button>
+          <button class="filter-tab" onclick="setFilter('processing', this)">Processing</button>
+          <button class="filter-tab" onclick="setFilter('completed', this)">Completed</button>
+          <button class="filter-tab" onclick="setFilter('rejected', this)">Rejected</button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID & Date</th>
+              <th>Amount ($ USDT)</th>
+              <th>TRC-20 Address</th>
+              <th>Status</th>
+              <th>Completion / TxID</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawals-table-body">
+            <tr>
+              <td colspan="6" style="text-align:center;padding:3rem;color:var(--muted);">Loading withdrawal records…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Modal -->
+  <div class="modal-overlay" id="complete-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="color:#4ade80;">✓</span> Mark Withdrawal as Completed
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('complete-modal')">✕</button>
+      </div>
+      <form id="complete-form" onsubmit="submitComplete(event)">
+        <input type="hidden" id="complete-id" />
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:0.9rem;margin-bottom:1.25rem;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem;">
+            <span style="color:var(--muted);font-size:0.75rem;">Request ID:</span>
+            <span class="code-pill" id="modal-req-id">WTH-XXXX</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem;">
+            <span style="color:var(--muted);font-size:0.75rem;">Amount:</span>
+            <span style="font-weight:700;color:#4ade80;" id="modal-req-amt">$0.00 USDT</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--muted);font-size:0.75rem;">Address:</span>
+            <span style="font-family:monospace;font-size:0.75rem;color:#c7d2fe;" id="modal-req-addr">T...</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="complete-txhash">TRON TRC-20 Transaction Hash (TxID)</label>
+          <input type="text" id="complete-txhash" class="form-input" placeholder="e.g. 7f3b8c... (optional on-chain proof)" />
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;">Optional on-chain transaction identifier for the payout record.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="complete-notes">Admin Notes</label>
+          <input type="text" id="complete-notes" class="form-input" placeholder="e.g. Sent via Binance / Trust Wallet" />
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('complete-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-complete" style="background:#16a34a;">
+            Confirm & Mark Completed
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" id="reject-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="color:#f87171;">✕</span> Reject Withdrawal
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('reject-modal')">✕</button>
+      </div>
+      <form id="reject-form" onsubmit="submitReject(event)">
+        <input type="hidden" id="reject-id" />
+        <div class="form-group">
+          <label class="form-label" for="reject-reason">Rejection Reason</label>
+          <input type="text" id="reject-reason" class="form-input" placeholder="e.g. Invalid TRC-20 address or unverified wallet" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('reject-modal')">Cancel</button>
+          <button type="submit" class="btn btn-danger" id="btn-submit-reject">
+            Confirm Rejection
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <script>
+    let withdrawalsData = [];
+    let currentFilter = 'all';
+    let pollInterval = null;
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.borderColor = isError ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)';
+      toast.style.display = 'flex';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    function copyText(text, btn) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+          const orig = btn.innerHTML;
+          btn.innerHTML = '✓ Copied';
+          setTimeout(() => { btn.innerHTML = orig; }, 1800);
+        }
+      });
+    }
+
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        document.getElementById('login-overlay').style.display = 'flex';
+        return false;
+      }
+      document.getElementById('login-overlay').style.display = 'none';
+      return true;
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('login-username').value.trim();
+      const pass = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('btn-login');
+
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Authenticating…';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Invalid credentials');
+
+        localStorage.setItem('admin_token', data.token);
+        document.getElementById('login-overlay').style.display = 'none';
+        fetchWithdrawals();
+        startPolling();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Admin Portal';
+      }
+    }
+
+    function adminLogout() {
+      localStorage.removeItem('admin_token');
+      clearInterval(pollInterval);
+      document.getElementById('login-overlay').style.display = 'flex';
+    }
+
+    async function fetchWithdrawals(silent = false) {
+      if (!checkAuth()) return;
+      const token = localStorage.getItem('admin_token');
+
+      try {
+        const res = await fetch('/api/admin/withdrawals', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          adminLogout();
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Failed to fetch');
+
+        withdrawalsData = data.withdrawals || [];
+        updateKPIs(data.stats || {});
+        renderTable();
+
+        if (silent) showToast('Data refreshed successfully');
+      } catch (err) {
+        console.error('Error fetching admin data:', err);
+      }
+    }
+
+    function updateKPIs(stats) {
+      document.getElementById('kpi-pending-amt').textContent = '$' + (stats.totalPendingAmount || 0).toFixed(2);
+      document.getElementById('kpi-pending-count').textContent = `${stats.pending || 0} pending requests`;
+
+      document.getElementById('kpi-proc-amt').textContent = '$' + (withdrawalsData.filter(w => w.status === 'processing').reduce((s, w) => s + (w.numericAmount || 0), 0)).toFixed(2);
+      document.getElementById('kpi-proc-count').textContent = `${stats.processing || 0} in progress`;
+
+      document.getElementById('kpi-completed-amt').textContent = '$' + (stats.totalCompletedAmount || 0).toFixed(2);
+      document.getElementById('kpi-completed-count').textContent = `${stats.completed || 0} payouts completed`;
+
+      document.getElementById('kpi-remaining-amt').textContent = '$' + (stats.remaining || 0).toFixed(2);
+      document.getElementById('kpi-max-amt').textContent = `Total scraped: $${(stats.originalMax || 0).toFixed(2)}`;
+
+      document.getElementById('total-count-badge').textContent = `${withdrawalsData.length} total`;
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(el => el.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('withdrawals-table-body');
+      let filtered = withdrawalsData;
+
+      if (currentFilter !== 'all') {
+        filtered = withdrawalsData.filter(item => (item.status || 'pending').toLowerCase() === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;padding:3rem;color:var(--muted);">
+              No ${currentFilter === 'all' ? '' : currentFilter} withdrawal requests found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const st = (item.status || 'pending').toLowerCase();
+        const isPending = st === 'pending';
+        const isProc = st === 'processing';
+        const isComp = st === 'completed';
+        const isRej = st === 'rejected';
+
+        const statusBadge = `
+          <span class="status-badge ${st}">
+            ${(isPending || isProc) ? '<span class="live-dot" style="width:6px;height:6px;"></span>' : ''}
+            <span>${st}</span>
+          </span>
+        `;
+
+        const addrShort = item.address ? (item.address.slice(0, 8) + '...' + item.address.slice(-6)) : '—';
+        const tronscanUrl = `https://tronscan.org/#/address/${item.address}`;
+
+        let compDetails = '—';
+        if (isComp) {
+          compDetails = `
+            <div style="font-size:0.75rem;">
+              <div style="color:#4ade80;">Paid: ${item.completedAtFormatted || 'Done'}</div>
+              ${item.txHash ? `
+                <div style="margin-top:0.2rem;">
+                  <a href="https://tronscan.org/#/transaction/${item.txHash}" target="_blank" rel="noopener noreferrer" style="color:#a5b4fc;text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;">
+                    <span>TxID: ${item.txHash.slice(0, 8)}...</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg>
+                  </a>
+                </div>
+              ` : ''}
+              ${item.notes ? `<div style="color:var(--muted);font-size:0.7rem;">Note: ${item.notes}</div>` : ''}
+            </div>
+          `;
+        } else if (isRej) {
+          compDetails = `
+            <div style="font-size:0.75rem;color:#f87171;">
+              <div>Declined</div>
+              <div style="color:var(--muted);font-size:0.7rem;">${item.rejectionReason || item.notes || 'No reason'}</div>
+            </div>
+          `;
+        }
+
+        let actions = `
+          <div class="actions-group" style="justify-content:flex-end;">
+            ${(isPending || isProc) ? `
+              ${isPending ? `
+                <button type="button" class="btn btn-info" style="padding:0.3rem 0.6rem;font-size:0.74rem;" onclick="setStatus('${item.id}', 'processing')">
+                  ⚡ Processing
+                </button>
+              ` : ''}
+              <button type="button" class="btn btn-success" style="padding:0.3rem 0.65rem;font-size:0.74rem;" onclick="openCompleteModal('${item.id}', '${item.amount}', '${item.address}')">
+                ✓ Complete
+              </button>
+              <button type="button" class="btn btn-danger" style="padding:0.3rem 0.55rem;font-size:0.74rem;" onclick="openRejectModal('${item.id}')">
+                ✕ Reject
+              </button>
+            ` : `
+              <button type="button" class="btn" style="padding:0.25rem 0.55rem;font-size:0.72rem;color:var(--muted);" onclick="openCompleteModal('${item.id}', '${item.amount}', '${item.address}')">
+                Edit TxID
+              </button>
+            `}
+          </div>
+        `;
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:600;color:#c7d2fe;font-family:'JetBrains Mono',monospace;">${item.id}</div>
+              <div style="font-size:0.74rem;color:var(--muted);margin-top:0.15rem;">${item.requestedAtFormatted || '—'}</div>
+            </td>
+            <td>
+              <div style="font-weight:800;font-size:1rem;color:#4ade80;">${item.amount}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">TRC-20 USDT</div>
+            </td>
+            <td>
+              <div class="address-wrapper">
+                <span class="code-pill">${addrShort}</span>
+                <button type="button" class="btn" style="padding:0.2rem 0.45rem;font-size:0.7rem;" onclick="copyText('${item.address}', this)">Copy</button>
+                <a href="${tronscanUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="padding:0.2rem 0.45rem;font-size:0.7rem;text-decoration:none;" title="View on TronScan">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg>
+                </a>
+              </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td>${compDetails}</td>
+            <td style="text-align:right;">${actions}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function setStatus(id, status, txHash = '', notes = '') {
+      const token = localStorage.getItem('admin_token');
+      try {
+        const res = await fetch(`/api/admin/withdrawals/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ status, txHash, notes })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Failed to update');
+
+        showToast(`Withdrawal updated to ${status}`);
+        fetchWithdrawals();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function openCompleteModal(id, amount, address) {
+      document.getElementById('complete-id').value = id;
+      document.getElementById('modal-req-id').textContent = id;
+      document.getElementById('modal-req-amt').textContent = amount;
+      document.getElementById('modal-req-addr').textContent = address;
+      document.getElementById('complete-txhash').value = '';
+      document.getElementById('complete-notes').value = '';
+      document.getElementById('complete-modal').style.display = 'flex';
+    }
+
+    function openRejectModal(id) {
+      document.getElementById('reject-id').value = id;
+      document.getElementById('reject-reason').value = '';
+      document.getElementById('reject-modal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    async function submitComplete(e) {
+      e.preventDefault();
+      const id = document.getElementById('complete-id').value;
+      const txHash = document.getElementById('complete-txhash').value.trim();
+      const notes = document.getElementById('complete-notes').value.trim();
+      const btn = document.getElementById('btn-submit-complete');
+
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+
+      await setStatus(id, 'completed', txHash, notes);
+      closeModal('complete-modal');
+      btn.disabled = false;
+      btn.textContent = 'Confirm & Mark Completed';
+    }
+
+    async function submitReject(e) {
+      e.preventDefault();
+      const id = document.getElementById('reject-id').value;
+      const reason = document.getElementById('reject-reason').value.trim();
+      const btn = document.getElementById('btn-submit-reject');
+
+      btn.disabled = true;
+      btn.textContent = 'Rejecting…';
+
+      await setStatus(id, 'rejected', '', reason);
+      closeModal('reject-modal');
+      btn.disabled = false;
+      btn.textContent = 'Confirm Rejection';
+    }
+
+    function startPolling() {
+      clearInterval(pollInterval);
+      pollInterval = setInterval(() => {
+        fetchWithdrawals();
+      }, 15000); // 15s auto-poll
+    }
+
+    // Init
+    if (checkAuth()) {
+      fetchWithdrawals();
+      startPolling();
+    }
+  </script>
+</body>
+
+</html>
