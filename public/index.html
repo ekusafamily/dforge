@@ -1384,12 +1384,6 @@
           <button class="period-tab" id="tab-lastMonth" onclick="selectPeriod('lastMonth')">
             <span class="period-dot"></span> Last Month
           </button>
-          <button class="period-tab" id="tab-today" onclick="selectPeriod('today')">
-            <span class="period-dot"></span> Today
-          </button>
-          <button class="period-tab" id="tab-yesterday" onclick="selectPeriod('yesterday')">
-            <span class="period-dot"></span> Yesterday
-          </button>
         </div>
       </div>
 
@@ -1584,9 +1578,7 @@
 
     const PERIOD_LABELS = {
       thisMonth: 'This Month',
-      lastMonth: 'Last Month',
-      today: 'Today',
-      yesterday: 'Yesterday'
+      lastMonth: 'Last Month'
     };
 
     function selectPeriod(periodKey) {
