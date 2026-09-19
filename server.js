@@ -1,9 +1,9 @@
-const express   = require("express");
-const cors      = require("cors");
+const express = require("express");
+const cors = require("cors");
 const puppeteer = require("puppeteer");
-const path      = require("path");
-const fs        = require("fs");
-const https     = require("https");
+const path = require("path");
+const fs = require("fs");
+const https = require("https");
 
 // Auto-load .env in Node 20+
 try {
@@ -14,14 +14,20 @@ try {
   // If .env already loaded or not found, proceed
 }
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Config ─────────────────────────────────────────────────────────────────
-const DFORGE_EMAIL      = process.env.DFORGE_EMAIL    || "brianireri002@gmail.com";
-const DFORGE_PASSWORD   = process.env.DFORGE_PASSWORD || "Ilove.mumu047";
-const DFORGE_LOGIN_URL  = "https://dforge.site/login";
+const DFORGE_EMAIL = process.env.DFORGE_EMAIL || "brianireri002@gmail.com";
+const DFORGE_PASSWORD = process.env.DFORGE_PASSWORD || "Ilove.mumu047";
+const DFORGE_LOGIN_URL = "https://dforge.site/login";
 const DFORGE_TARGET_URL = "https://dforge.site/commissions";
+
+// ─── Deduct Time Configuration ──────────────────────────────────────────────
+// Cutoff time when the new deduction takes effect (Nairobi Time UTC+3).
+// Existing today's data seen by client prior to this time remains untouched.
+const deductTime = process.env.DEDUCT_TIME || "2026-09-20T00:00:00+03:00";
+const deductTodayBaseline = parseFloat(process.env.DEDUCT_TODAY_BASELINE || "2.31");
 
 // Customer credentials (strictly for customer dashboard)
 const DASHBOARD_USER = process.env.DASHBOARD_USER || "admin";
@@ -33,7 +39,7 @@ const ADMIN_PASS = process.env.ADMIN_PASS || "6946";
 
 // Telegram Configuration
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
-const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID   || "";
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 
 function sendTelegramNotification(message) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN.includes("your_telegram_bot_token")) {
@@ -293,7 +299,7 @@ async function scrapeDforgeCommissions() {
     await page.waitForSelector('input[type="email"]', { timeout: 15000 });
     await page.type('input[type="email"]', DFORGE_EMAIL, { delay: 40 });
     await page.type('input[type="password"]', DFORGE_PASSWORD, { delay: 40 });
-    
+
     await page.click('button[type="submit"]');
     await new Promise((r) => setTimeout(r, 4000));
     console.log("✅ Logged in →", page.url());
@@ -315,7 +321,7 @@ async function scrapeDforgeCommissions() {
       const allEls = [...document.querySelectorAll("button, div[role='button'], div[tabindex]")];
       const thisMonthBtn = allEls.find(
         (el) => el.textContent.trim().match(/^This Month/) ||
-                (el.childElementCount < 6 && el.textContent.includes("This Month") && !el.textContent.includes("Last Month"))
+          (el.childElementCount < 6 && el.textContent.includes("This Month") && !el.textContent.includes("Last Month"))
       );
       if (thisMonthBtn) {
         thisMonthBtn.click();
@@ -330,32 +336,54 @@ async function scrapeDforgeCommissions() {
 
     // ── Extract targeted data per period ────────────────────────────────
     console.log("🔍 Extracting targeted data...");
-    const data = await page.evaluate(() => {
-      function calculateCommission(rawShareStr) {
+    const data = await page.evaluate((deductTimeStr, todayBaselineNum) => {
+      const deductTimestamp = new Date(deductTimeStr).getTime();
+      const now = Date.now();
+      const isPastDeductTime = now >= deductTimestamp;
+
+      function calculateCommission(rawShareStr, isToday = false) {
         if (!rawShareStr || rawShareStr === "—") return "—";
         const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
         if (isNaN(num)) return rawShareStr;
 
+        // Today's commission is affected by deductTime:
+        // Before deductTime: keep existing today's data the client has seen.
+        // After deductTime: deduction begins on today's commission (97%).
+        if (isToday) {
+          if (!isPastDeductTime) {
+            return "$" + num.toFixed(2);
+          }
+          return "$" + (num * 0.98).toFixed(2);
+        }
+
+        // This Month earnings:
+        // Remains using up to $80 at 97%, then after deductTime the 10% deduction above $80 begins.
         let adjusted = num;
-        if (num >= 65) {
-          // Tiered: First $50 at 0% ($50), $50–$65 at 15% ($12.75), and 40% deduction on portion above $65
-          adjusted = 50 + (15 * 0.85) + 0.60 * (num - 65);
-        } else if (num > 50) {
-          // First $50 at 0%, portion above $50 at 15% deduction
-          adjusted = 50 + 0.85 * (num - 50);
+        if (num > 80) {
+          if (isPastDeductTime) {
+            // After deductTime: 10% deduction on portion above $80 begins
+            adjusted = (80 * 0.98) + 0.90 * (num - 80);
+          } else {
+            // Before deductTime: remains using 97%
+            adjusted = num * 0.98;
+          }
+        } else {
+          // Up to $80: always 97%
+          adjusted = num * 0.98;
         }
 
         return "$" + adjusted.toFixed(2);
       }
 
-      function parseCardText(cardText) {
+      function parseCardText(cardText, isHistorical = false, isToday = false) {
         if (!cardText) return null;
         const shareMatch = cardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i);
         const tradeMatch = cardText.match(/([\d,]+)\s*trades?/i);
         const traderMatch = cardText.match(/([\d,]+)\s*traders?/i);
 
         const rawShare = shareMatch ? "$" + shareMatch[1] : "—";
-        const commission = calculateCommission(rawShare);
+        // Deductions apply to ongoing periods (thisMonth, today, yesterday). Historical completed periods (lastMonth) remain raw.
+        const commission = isHistorical ? rawShare : calculateCommission(rawShare, isToday);
 
         return {
           commission,
@@ -375,10 +403,10 @@ async function scrapeDforgeCommissions() {
       };
 
       const periods = {
-        thisMonth: parseCardText(findCard("This Month")),
-        lastMonth: parseCardText(findCard("Last Month")),
-        today:     parseCardText(findCard("Today")),
-        yesterday: parseCardText(findCard("Yesterday")),
+        thisMonth: parseCardText(findCard("This Month"), false, false),
+        lastMonth: parseCardText(findCard("Last Month"), true, false),
+        today: parseCardText(findCard("Today"), false, true),
+        yesterday: parseCardText(findCard("Yesterday"), false, false),
       };
 
       const pageText = document.body.innerText;
@@ -402,6 +430,11 @@ async function scrapeDforgeCommissions() {
         amount: thisMonth.commission || "—"
       };
 
+      // Determine this month raw amount to select appropriate trade deduction rate
+      const thisMonthCardText = findCard("This Month");
+      const thisMonthShareMatch = thisMonthCardText ? thisMonthCardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i) : null;
+      const thisMonthRaw = thisMonthShareMatch ? parseFloat(thisMonthShareMatch[1].replace(/,/g, "")) : 0;
+
       // Recent trades table
       const trades = [];
       const table = document.querySelector("table");
@@ -414,22 +447,56 @@ async function scrapeDforgeCommissions() {
         for (const row of rows.slice(0, 50)) { // cap at 50 rows
           const cells = [...row.querySelectorAll("td")];
           const rowData = {};
+          let tradeBuyTimeStr = "";
+
+          cells.forEach((td, i) => {
+            const key = headers[i] || `col_${i}`;
+            let val = td.textContent.trim().replace(/\s+/g, " ");
+            if (key === "buy_time") {
+              tradeBuyTimeStr = val;
+            }
+            rowData[key] = val;
+          });
+
+          // Check if this trade occurred on or after deductTime
+          let isTradeAfterDeduct = false;
+          if (tradeBuyTimeStr) {
+            const year = new Date().getFullYear();
+            // Format: "Sep 19, 11:17 AM" -> "Sep 19 2026 11:17 AM GMT+0300"
+            const parsedTradeDate = new Date(tradeBuyTimeStr.replace(",", " " + year + ",") + " GMT+0300");
+            if (!isNaN(parsedTradeDate.getTime())) {
+              isTradeAfterDeduct = parsedTradeDate.getTime() >= deductTimestamp;
+            }
+          }
+
           cells.forEach((td, i) => {
             const key = headers[i] || `col_${i}`;
             let val = td.textContent.trim().replace(/\s+/g, " ");
             if (key === "gross_markup") {
               const num = parseFloat(val.replace(/[^0-9.]/g, ""));
-              rowData["commission"] = isNaN(num) ? val : "$" + (num * 0.8).toFixed(2);
-            } else {
-              rowData[key] = val;
+              if (isNaN(num)) {
+                rowData["commission"] = val;
+              } else {
+                const rawTradeCommission = num * 0.8;
+                // Only affected by deductTime: before deductTime, keep existing trades as seen by client;
+                // after deductTime, deduction begins!
+                if (isPastDeductTime || isTradeAfterDeduct) {
+                  const rate = thisMonthRaw > 80 ? 0.90 : 0.98;
+                  rowData["commission"] = "$" + (rawTradeCommission * rate).toFixed(2);
+                } else {
+                  rowData["commission"] = "$" + rawTradeCommission.toFixed(2);
+                }
+              }
+              delete rowData["gross_markup"];
             }
           });
+
           if (Object.keys(rowData).length > 0) trades.push(rowData);
         }
       }
 
       return { thisMonth, periods, combined, trades, winRate };
-    });
+    }, deductTime, deductTodayBaseline);
 
     console.log("✅ Data extracted. Trades:", data.trades.length);
     return data;
@@ -441,7 +508,7 @@ async function scrapeDforgeCommissions() {
 
 // ─── API ────────────────────────────────────────────────────────────────────
 app.get("/api/commissions", requireAuth, async (req, res) => {
-  const now          = Date.now();
+  const now = Date.now();
   const forceRefresh = req.query.refresh === "true";
 
   if (!forceRefresh && cache.data && cache.fetchedAt && now - cache.fetchedAt < CACHE_TTL_MS) {
