@@ -143,11 +143,71 @@ function deleteWithdrawalRecord(id) {
   }
 }
 
+// ─── Settings Persistence (Available to Withdraw Override) ───────────────────
+const SETTINGS_FILE = path.join(__dirname, "settings.json");
+
+function getSettings() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
+      return {
+        withdrawalOverride: parsed.withdrawalOverride !== undefined ? parsed.withdrawalOverride : null,
+        lastMonthCommissionOverride: parsed.lastMonthCommissionOverride !== undefined ? parsed.lastMonthCommissionOverride : null
+      };
+    }
+  } catch (e) {
+    console.error("Error reading settings.json:", e.message);
+  }
+  return { withdrawalOverride: null, lastMonthCommissionOverride: null };
+}
+
+function saveSettings(settings) {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    return true;
+  } catch (e) {
+    console.error("Error saving settings.json:", e.message);
+    return false;
+  }
+}
+
+// Applies configured overrides (e.g. Last Month Commission) to scraped payload
+function applyOverrides(data) {
+  if (!data || !data.periods) return data;
+  const settings = getSettings();
+  const envLastMonthOverride = process.env.LAST_MONTH_COMMISSION_OVERRIDE ? parseFloat(process.env.LAST_MONTH_COMMISSION_OVERRIDE) : null;
+  const overrideVal = settings.lastMonthCommissionOverride != null ? parseFloat(settings.lastMonthCommissionOverride) : envLastMonthOverride;
+
+  if (overrideVal != null && !isNaN(overrideVal) && overrideVal >= 0) {
+    const formatted = "$" + overrideVal.toFixed(2);
+    if (!data.periods.lastMonth) {
+      data.periods.lastMonth = { trades: "—", traders: "—" };
+    }
+    data.periods.lastMonth.commission = formatted;
+    data.periods.lastMonth.yourShare = formatted;
+  }
+  return data;
+}
+
 // Cache for 5 minutes
 let cache = { data: null, fetchedAt: null };
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function getLastMonthAvailableAmount() {
+  const settings = getSettings();
+  const envOverride = process.env.WITHDRAWAL_OVERRIDE ? parseFloat(process.env.WITHDRAWAL_OVERRIDE) : null;
+  const activeOverride = settings.withdrawalOverride != null ? parseFloat(settings.withdrawalOverride) : envOverride;
+
+  if (activeOverride != null && !isNaN(activeOverride) && activeOverride >= 0) {
+    return activeOverride;
+  }
+
+  const envLastMonthOverride = process.env.LAST_MONTH_COMMISSION_OVERRIDE ? parseFloat(process.env.LAST_MONTH_COMMISSION_OVERRIDE) : null;
+  const lastMonthOverride = settings.lastMonthCommissionOverride != null ? parseFloat(settings.lastMonthCommissionOverride) : envLastMonthOverride;
+  if (lastMonthOverride != null && !isNaN(lastMonthOverride) && lastMonthOverride >= 0) {
+    return lastMonthOverride;
+  }
+
   if (cache.data?.periods?.lastMonth?.commission) {
     const num = parseFloat(cache.data.periods.lastMonth.commission.replace(/[^0-9.]/g, ""));
     if (!isNaN(num) && num > 0) return num;
@@ -155,12 +215,20 @@ function getLastMonthAvailableAmount() {
   return 44.42; // default fallback matching scraped Last Month
 }
 
+function isCurrentMonthWithdrawal(w) {
+  if (!w.requestedAt) return false;
+  const d = new Date(w.requestedAt);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
 function getRemainingAvailableAmount() {
   const maxAllowed = getLastMonthAvailableAmount();
   const list = getWithdrawalsList();
-  // Deduct amounts for pending, processing, or completed withdrawals
+  // Only deduct amounts for pending, processing, or completed withdrawals in the current calendar month
+  // Previous months' deductions automatically reset when rolling into a new month
   const totalUsed = list
-    .filter(w => w.status === "completed" || w.status === "processing" || w.status === "pending")
+    .filter(w => (w.status === "completed" || w.status === "processing" || w.status === "pending") && isCurrentMonthWithdrawal(w))
     .reduce((sum, w) => sum + (w.numericAmount || 0), 0);
   return Math.max(0, maxAllowed - totalUsed);
 }
@@ -341,49 +409,30 @@ async function scrapeDforgeCommissions() {
       const now = Date.now();
       const isPastDeductTime = now >= deductTimestamp;
 
-      function calculateCommission(rawShareStr, isToday = false) {
+      function calculateCommission(rawShareStr) {
         if (!rawShareStr || rawShareStr === "—") return "—";
         const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
         if (isNaN(num)) return rawShareStr;
 
-        // Today's commission is affected by deductTime:
-        // Before deductTime: keep existing today's data the client has seen.
-        // After deductTime: deduction begins on today's commission (97%).
-        if (isToday) {
-          if (!isPastDeductTime) {
-            return "$" + num.toFixed(2);
-          }
-          return "$" + (num * 0.98).toFixed(2);
-        }
-
-        // This Month earnings:
-        // Remains using up to $80 at 97%, then after deductTime the 10% deduction above $80 begins.
+        // Flat 10% deduction of the displayed amount (retaining 90%)
         let adjusted = num;
-        if (num > 80) {
-          if (isPastDeductTime) {
-            // After deductTime: 10% deduction on portion above $80 begins
-            adjusted = (80 * 0.98) + 0.90 * (num - 80);
-          } else {
-            // Before deductTime: remains using 97%
-            adjusted = num * 0.98;
-          }
-        } else {
-          // Up to $80: always 97%
-          adjusted = num * 0.98;
+        if (isPastDeductTime) {
+          adjusted = num * 0.90;
         }
 
         return "$" + adjusted.toFixed(2);
       }
 
-      function parseCardText(cardText, isHistorical = false, isToday = false) {
+      function parseCardText(cardText) {
         if (!cardText) return null;
         const shareMatch = cardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i);
         const tradeMatch = cardText.match(/([\d,]+)\s*trades?/i);
         const traderMatch = cardText.match(/([\d,]+)\s*traders?/i);
 
         const rawShare = shareMatch ? "$" + shareMatch[1] : "—";
-        // Deductions apply to ongoing periods (thisMonth, today, yesterday). Historical completed periods (lastMonth) remain raw.
-        const commission = isHistorical ? rawShare : calculateCommission(rawShare, isToday);
+        // Apply flat 10% deduction (0.90 retained) across all periods including Last Month
+        // so Last Month reflects the 0.9 amount from This Month
+        const commission = calculateCommission(rawShare);
 
         return {
           commission,
@@ -403,10 +452,10 @@ async function scrapeDforgeCommissions() {
       };
 
       const periods = {
-        thisMonth: parseCardText(findCard("This Month"), false, false),
-        lastMonth: parseCardText(findCard("Last Month"), true, false),
-        today: parseCardText(findCard("Today"), false, true),
-        yesterday: parseCardText(findCard("Yesterday"), false, false),
+        thisMonth: parseCardText(findCard("This Month")),
+        lastMonth: parseCardText(findCard("Last Month")),
+        today: parseCardText(findCard("Today")),
+        yesterday: parseCardText(findCard("Yesterday")),
       };
 
       const pageText = document.body.innerText;
@@ -429,11 +478,6 @@ async function scrapeDforgeCommissions() {
       const combined = {
         amount: thisMonth.commission || "—"
       };
-
-      // Determine this month raw amount to select appropriate trade deduction rate
-      const thisMonthCardText = findCard("This Month");
-      const thisMonthShareMatch = thisMonthCardText ? thisMonthCardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i) : null;
-      const thisMonthRaw = thisMonthShareMatch ? parseFloat(thisMonthShareMatch[1].replace(/,/g, "")) : 0;
 
       // Recent trades table
       const trades = [];
@@ -478,10 +522,9 @@ async function scrapeDforgeCommissions() {
                 rowData["commission"] = val;
               } else {
                 const rawTradeCommission = num * 0.8;
-                // Only affected by deductTime: before deductTime, keep existing trades as seen by client;
-                // after deductTime, deduction begins!
+                // Flat 10% deduction of the displayed amount (retaining 90%)
                 if (isPastDeductTime || isTradeAfterDeduct) {
-                  const rate = thisMonthRaw > 80 ? 0.90 : 0.98;
+                  const rate = 0.90;
                   rowData["commission"] = "$" + (rawTradeCommission * rate).toFixed(2);
                 } else {
                   rowData["commission"] = "$" + rawTradeCommission.toFixed(2);
@@ -499,7 +542,7 @@ async function scrapeDforgeCommissions() {
     }, deductTime, deductTodayBaseline);
 
     console.log("✅ Data extracted. Trades:", data.trades.length);
-    return data;
+    return applyOverrides(data);
   } finally {
     await browser.close();
     console.log("🧹 Browser closed.");
@@ -513,13 +556,13 @@ app.get("/api/commissions", requireAuth, async (req, res) => {
 
   if (!forceRefresh && cache.data && cache.fetchedAt && now - cache.fetchedAt < CACHE_TTL_MS) {
     console.log("📦 Returning cached data.");
-    return res.json({ success: true, cached: true, fetchedAt: new Date(cache.fetchedAt).toISOString(), ...cache.data });
+    return res.json({ success: true, cached: true, fetchedAt: new Date(cache.fetchedAt).toISOString(), ...applyOverrides(cache.data) });
   }
 
   try {
     const data = await scrapeDforgeCommissions();
     cache = { data, fetchedAt: Date.now() };
-    return res.json({ success: true, cached: false, fetchedAt: new Date(cache.fetchedAt).toISOString(), ...data });
+    return res.json({ success: true, cached: false, fetchedAt: new Date(cache.fetchedAt).toISOString(), ...applyOverrides(data) });
   } catch (err) {
     console.error("❌ Scraping error:", err.message);
     sendTelegramNotification(
@@ -536,7 +579,7 @@ app.get("/api/commissions", requireAuth, async (req, res) => {
         cached: true,
         stale: true,
         fetchedAt: new Date(cache.fetchedAt).toISOString(),
-        ...cache.data
+        ...applyOverrides(cache.data)
       });
     }
 
@@ -723,6 +766,83 @@ app.delete("/api/admin/withdrawals/:id", requireAdminAuth, (req, res) => {
   const { id } = req.params;
   const ok = deleteWithdrawalRecord(id);
   return res.json({ success: ok });
+});
+
+// Clear all withdrawal records
+app.delete("/api/admin/withdrawals-all", requireAdminAuth, (req, res) => {
+  try {
+    fs.writeFileSync(WITHDRAWALS_FILE, "[]");
+    return res.json({ success: true, message: "All withdrawal history cleared." });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── Admin Settings (Available to Withdraw & Commission Overrides) ───────────
+app.get("/api/admin/settings", requireAdminAuth, (req, res) => {
+  const settings = getSettings();
+  const rawScrapedLastMonth = cache.data?.periods?.lastMonth?.commission
+    ? parseFloat(cache.data.periods.lastMonth.commission.replace(/[^0-9.]/g, ""))
+    : 44.42;
+  const calculatedMax = getLastMonthAvailableAmount();
+  const remaining = getRemainingAvailableAmount();
+
+  return res.json({
+    success: true,
+    settings,
+    rawScrapedLastMonth,
+    calculatedMax,
+    remaining
+  });
+});
+
+app.post("/api/admin/settings", requireAdminAuth, (req, res) => {
+  const { withdrawalOverride, lastMonthCommissionOverride } = req.body || {};
+  const settings = getSettings();
+
+  if ("withdrawalOverride" in req.body) {
+    if (withdrawalOverride === null || withdrawalOverride === "" || withdrawalOverride === undefined) {
+      settings.withdrawalOverride = null;
+    } else {
+      const num = parseFloat(withdrawalOverride);
+      if (isNaN(num) || num < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid withdrawal override amount. Must be a positive number or empty to clear."
+        });
+      }
+      settings.withdrawalOverride = num;
+    }
+  }
+
+  if ("lastMonthCommissionOverride" in req.body) {
+    if (lastMonthCommissionOverride === null || lastMonthCommissionOverride === "" || lastMonthCommissionOverride === undefined) {
+      settings.lastMonthCommissionOverride = null;
+    } else {
+      const num = parseFloat(lastMonthCommissionOverride);
+      if (isNaN(num) || num < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid last month commission override amount. Must be a positive number or empty to clear."
+        });
+      }
+      settings.lastMonthCommissionOverride = num;
+    }
+  }
+
+  saveSettings(settings);
+
+  if (cache.data) {
+    applyOverrides(cache.data);
+  }
+
+  return res.json({
+    success: true,
+    message: "Settings saved successfully.",
+    settings,
+    calculatedMax: getLastMonthAvailableAmount(),
+    currentAvailable: getRemainingAvailableAmount()
+  });
 });
 
 app.listen(PORT, () => {

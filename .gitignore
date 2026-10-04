@@ -3,3 +3,4 @@ node_modules/
 *.log
 scratch_initial.png
 withdrawals.json
+settings.json
