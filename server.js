@@ -409,6 +409,23 @@ async function scrapeDforgeCommissions() {
       const now = Date.now();
       const isPastDeductTime = now >= deductTimestamp;
 
+      const buttons = [...document.querySelectorAll("button, div[role='button']")];
+      const findCard = (name) => {
+        const btn = buttons.find(b => {
+          const lines = b.innerText.trim().split("\n");
+          return lines[0].trim().toLowerCase() === name.toLowerCase();
+        });
+        return btn ? btn.innerText : null;
+      };
+
+      // Determine this month raw amount first to check if $10 threshold has been reached
+      const thisMonthCardText = findCard("This Month");
+      const thisMonthShareMatch = thisMonthCardText
+        ? (thisMonthCardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i) || thisMonthCardText.match(/\$([\d,.]+)/i))
+        : null;
+      const thisMonthRaw = thisMonthShareMatch ? parseFloat(thisMonthShareMatch[1].replace(/,/g, "")) : 0;
+      const isAboveThreshold = thisMonthRaw > 10;
+
       function calculateCommission(rawShareStr, isTotalMonth = false) {
         if (!rawShareStr || rawShareStr === "—") return "—";
         const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
@@ -418,16 +435,22 @@ async function scrapeDforgeCommissions() {
         if (isPastDeductTime) {
           if (isTotalMonth) {
             // For monthly totals (This Month, Last Month):
-            // Progressive 10% deduction starting at $10 (first $10 kept at 100%, portion above $10 cut by 10% / retaining 90%)
+            // When total is at $8 (<= $10): 100% (1.00x).
+            // When total reaches $11 (> $10): progressive 10% deduction starting above $10
             if (num > 10) {
               adjusted = 10 + 0.90 * (num - 10);
             } else {
               adjusted = num;
             }
           } else {
-            // For daily sections (Today, Yesterday) & components:
-            // 10% deduction applies (retaining 90%)
-            adjusted = num * 0.90;
+            // For daily sections (Today, Yesterday):
+            // When total commission is $8 (<= $10): 1.00x of today's commission
+            // When total commission reaches $11 (> $10): 0.90x begins
+            if (isAboveThreshold) {
+              adjusted = num * 0.90;
+            } else {
+              adjusted = num;
+            }
           }
         }
 
@@ -451,15 +474,6 @@ async function scrapeDforgeCommissions() {
           traders: traderMatch ? traderMatch[1] : "—",
         };
       }
-
-      const buttons = [...document.querySelectorAll("button, div[role='button']")];
-      const findCard = (name) => {
-        const btn = buttons.find(b => {
-          const lines = b.innerText.trim().split("\n");
-          return lines[0].trim().toLowerCase() === name.toLowerCase();
-        });
-        return btn ? btn.innerText : null;
-      };
 
       const periods = {
         thisMonth: parseCardText(findCard("This Month"), true),
@@ -488,11 +502,6 @@ async function scrapeDforgeCommissions() {
       const combined = {
         amount: thisMonth.commission || "—"
       };
-
-      // Determine this month raw amount to select appropriate trade deduction rate
-      const thisMonthCardText = findCard("This Month");
-      const thisMonthShareMatch = thisMonthCardText ? thisMonthCardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i) : null;
-      const thisMonthRaw = thisMonthShareMatch ? parseFloat(thisMonthShareMatch[1].replace(/,/g, "")) : 0;
 
       // Recent trades table
       const trades = [];
@@ -537,8 +546,9 @@ async function scrapeDforgeCommissions() {
                 rowData["commission"] = val;
               } else {
                 const rawTradeCommission = num * 0.8;
-                // Deduction of 10% (retaining 90%) applied to all recent trades
-                if (isPastDeductTime || isTradeAfterDeduct) {
+                // When total commission is at $8 (<= $10): 1.00x (no deduction)
+                // When total commission reaches $11 (> $10): 0.90x begins
+                if ((isPastDeductTime || isTradeAfterDeduct) && isAboveThreshold) {
                   const rate = 0.90;
                   rowData["commission"] = "$" + (rawTradeCommission * rate).toFixed(2);
                 } else {
