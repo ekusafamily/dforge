@@ -409,34 +409,40 @@ async function scrapeDforgeCommissions() {
       const now = Date.now();
       const isPastDeductTime = now >= deductTimestamp;
 
-      function calculateCommission(rawShareStr) {
+      function calculateCommission(rawShareStr, isTotalMonth = false) {
         if (!rawShareStr || rawShareStr === "—") return "—";
         const num = parseFloat(String(rawShareStr).replace(/[^0-9.]/g, ""));
         if (isNaN(num)) return rawShareStr;
 
-        // Progressive 10% deduction starting at $10 (first $10 kept at 100%, portion above $10 cut by 10% / retaining 90%)
         let adjusted = num;
         if (isPastDeductTime) {
-          if (num > 10) {
-            adjusted = 10 + 0.90 * (num - 10);
+          if (isTotalMonth) {
+            // For monthly totals (This Month, Last Month):
+            // Progressive 10% deduction starting at $10 (first $10 kept at 100%, portion above $10 cut by 10% / retaining 90%)
+            if (num > 10) {
+              adjusted = 10 + 0.90 * (num - 10);
+            } else {
+              adjusted = num;
+            }
           } else {
-            adjusted = num;
+            // For daily sections (Today, Yesterday) & components:
+            // 10% deduction applies (retaining 90%)
+            adjusted = num * 0.90;
           }
         }
 
         return "$" + adjusted.toFixed(2);
       }
 
-      function parseCardText(cardText) {
+      function parseCardText(cardText, isTotalMonth = false) {
         if (!cardText) return null;
-        const shareMatch = cardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i);
+        const shareMatch = cardText.match(/Your share\s*\(\d+%\)[\s\S]*?\$([\d,.]+)/i) || cardText.match(/\$([\d,.]+)/i);
         const tradeMatch = cardText.match(/([\d,]+)\s*trades?/i);
         const traderMatch = cardText.match(/([\d,]+)\s*traders?/i);
 
         const rawShare = shareMatch ? "$" + shareMatch[1] : "—";
-        // Apply progressive 10% deduction starting at $10 across all periods including Last Month
-        // so Last Month reflects the calculated amount from This Month
-        const commission = calculateCommission(rawShare);
+        // Apply deduction across all periods
+        const commission = calculateCommission(rawShare, isTotalMonth);
 
         return {
           commission,
@@ -456,10 +462,10 @@ async function scrapeDforgeCommissions() {
       };
 
       const periods = {
-        thisMonth: parseCardText(findCard("This Month")),
-        lastMonth: parseCardText(findCard("Last Month")),
-        today: parseCardText(findCard("Today")),
-        yesterday: parseCardText(findCard("Yesterday")),
+        thisMonth: parseCardText(findCard("This Month"), true),
+        lastMonth: parseCardText(findCard("Last Month"), true),
+        today: parseCardText(findCard("Today"), false),
+        yesterday: parseCardText(findCard("Yesterday"), false),
       };
 
       const pageText = document.body.innerText;
@@ -531,8 +537,8 @@ async function scrapeDforgeCommissions() {
                 rowData["commission"] = val;
               } else {
                 const rawTradeCommission = num * 0.8;
-                // Deduction begins after deductTime and once this month exceeds $10
-                if ((isPastDeductTime || isTradeAfterDeduct) && thisMonthRaw > 10) {
+                // Deduction of 10% (retaining 90%) applied to all recent trades
+                if (isPastDeductTime || isTradeAfterDeduct) {
                   const rate = 0.90;
                   rowData["commission"] = "$" + (rawTradeCommission * rate).toFixed(2);
                 } else {
