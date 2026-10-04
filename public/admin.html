@@ -688,7 +688,7 @@
         <div style="max-width:550px;">
           <div style="font-weight:600;font-size:0.9rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;">
             <span>Last Month Displayed Commission</span>
-            <span id="lastmonth-status-badge" class="admin-badge" style="background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);">Auto (Scraped 0.9)</span>
+            <span id="lastmonth-status-badge" class="admin-badge" style="background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);">Auto (Scraped)</span>
           </div>
           <div style="font-size:0.8rem;color:var(--muted);margin-top:0.25rem;" id="lastmonth-status-desc">
             Overrides the commission amount displayed under "Last Month" on the customer portal.
@@ -1186,12 +1186,12 @@
         lmBadge.style.background = 'rgba(234, 179, 8, 0.15)';
         lmBadge.style.color = '#fde047';
         lmBadge.style.borderColor = 'rgba(234, 179, 8, 0.3)';
-        lmDesc.textContent = `Active override set to $${Number(lmOverride).toFixed(2)} (Scraped 0.9 was $${(data.rawScrapedLastMonth || 0).toFixed(2)}). Displays on customer portal under Last Month.`;
+        lmDesc.textContent = `Active override set to $${Number(lmOverride).toFixed(2)} (Scraped was $${(data.rawScrapedLastMonth || 0).toFixed(2)}). Displays on customer portal under Last Month.`;
         if (lmInput && !lmInput.matches(':focus')) {
           lmInput.value = Number(lmOverride).toFixed(2);
         }
       } else {
-        lmBadge.textContent = 'Auto (Scraped 0.9)';
+        lmBadge.textContent = 'Auto (Scraped)';
         lmBadge.style.background = 'rgba(139,92,246,0.15)';
         lmBadge.style.color = '#c4b5fd';
         lmBadge.style.borderColor = 'rgba(139,92,246,0.3)';
